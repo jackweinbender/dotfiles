@@ -1,5 +1,4 @@
 #!/usr/bin/env zsh
-git clone --recursive https://github.com/Eriner/zim.git ${ZDOTDIR:-${HOME}}/.zim
 
 setopt EXTENDED_GLOB
 for template_file ( ${ZDOTDIR:-${HOME}}/.zim/templates/* ); do
@@ -7,5 +6,3 @@ for template_file ( ${ZDOTDIR:-${HOME}}/.zim/templates/* ); do
   touch ${user_file}
   ( print -rn "$(<${template_file})$(<${user_file})" >! ${user_file} ) 2>/dev/null
 done
-
-echo "Restart Terminal."
