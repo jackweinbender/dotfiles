@@ -8,10 +8,11 @@ brew upgrade
 
 # CLI Tools
 brew install git
+
+# Dev Env
 brew install node
 brew install elixir
 brew install pandoc
-
 
 # Cask
 brew cask install google-chrome
