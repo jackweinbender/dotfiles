@@ -12,6 +12,9 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # Install the basics
 source homebrew.sh
 
+# Setup Symlinks
+source symlinks/init.sh
+
 # Setup Terminal
 source terminal/init.sh
 
