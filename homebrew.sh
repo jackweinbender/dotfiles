@@ -18,6 +18,8 @@ brew install pandoc
 brew cask install google-chrome
 brew cask install atom
 brew cask install dashlane
+brew cask install dropbox
+brew cask install google-drive
 
 # Remove outdated versions from the cellar.
 brew cleanup
