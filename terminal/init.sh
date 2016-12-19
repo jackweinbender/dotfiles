@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
 # Install zsh and packages
-brew install zsh zsh-completions
+brew install zsh
 
-# Install Zim with zsh
-zsh -e ~/.dotfile/terminal/zim-setup.sh
-
-# Set the default shell to zsh
-sudo dscl . -create /Users/$USER UserShell /usr/local/bin/zsh
+# Install oh-my-zsh
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
