@@ -20,6 +20,8 @@ brew cask install atom
 brew cask install dashlane
 brew cask install dropbox
 brew cask install google-drive
+brew cask install skype
+brew cask install transmission
 
 # Remove outdated versions from the cellar.
 brew cleanup
