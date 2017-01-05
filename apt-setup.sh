@@ -16,8 +16,4 @@ source ~/.dotfiles/symlinks/init.sh
 source ~/.dotfiles/terminal/init.sh
 
 # Kill Terminal to force Restart
-echo "\n\n\nReopen Terminal when this window closes in 10 sec"
-
-sleep 10s
-
-killall "Terminal" &> /dev/null
+echo "\n\n\Please restart Terminal.\nYou may need to logout and log back in to see the full effects."
