@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 
 # Add PPAs
-add-apt-repository ppa:webupd8team/atom
+sudo add-apt-repository ppa:webupd8team/atom
 
 # Update apt
-apt-get update
+sudo apt-get update
 
 # Upgrade All
-apt-get upgrade
+sudo apt-get upgrade
 
 # CLI Tools
-apt-get install git
-apt-get install vim
+sudo apt-get install git
+sudo apt-get install vim
 
 # Dev Env
-apt-get install node
-apt-get install elixir
-apt-get install pandoc
-apt-get install rust
+sudo apt-get install node
+sudo apt-get install elixir
+sudo apt-get install pandoc
+sudo apt-get install rust
 
 # Terminal Deps
-apt-get install zsh
+sudo apt-get install zsh
 
 # GUI Apps
-apt-get install chromium
-apt-get install atom
-apt-get install dropbox
-apt-get install google-drive
-apt-get install transmission
+sudo apt-get install chromium
+sudo apt-get install atom
+sudo apt-get install dropbox
+sudo apt-get install google-drive
+sudo apt-get install transmission
 
 # Remove outdated versions from apt.
-apt-get clean
+sudo apt-get clean
