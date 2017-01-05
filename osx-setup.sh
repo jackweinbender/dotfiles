@@ -10,17 +10,17 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 # Install the basics
-source homebrew.sh
+source ~/.dotfiles/homebrew.sh
 
 # Setup Symlinks
-source symlinks/init.sh
+source ~/.dotfiles/symlinks/init.sh
 
 # Setup Terminal
-source terminal/init.sh
+source ~/.dotfiles/terminal/init.sh
 
 # Kill Terminal to force Restart
-echo "\n\n\nReopen Terminal when this window closes"
+echo "\n\n\nReopen Terminal when this window closes in 10 sec"
 
-sleep 5s
+sleep 10s
 
 killall "Terminal" &> /dev/null

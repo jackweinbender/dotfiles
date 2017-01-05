@@ -13,6 +13,10 @@ brew install git
 brew install node
 brew install elixir
 brew install pandoc
+brew install rust
+
+# Terminal Deps
+brew install zsh
 
 # Cask
 brew cask install google-chrome
