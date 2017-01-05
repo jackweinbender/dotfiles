@@ -26,6 +26,7 @@ brew cask install dropbox
 brew cask install google-drive
 brew cask install skype
 brew cask install transmission
+brew cask install mactex
 
 # Remove outdated versions from the cellar.
 brew cleanup
