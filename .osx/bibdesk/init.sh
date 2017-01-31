@@ -1,3 +1,3 @@
 #! /bin/bash
 
-ln -s BibDesk ~/Library/Application\ Support/BibDesk
+ln -s ~/.dotfiles/.osx/bibdesk/BibDesk ~/Library/Application\ Support/BibDesk
