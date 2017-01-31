@@ -29,6 +29,7 @@ brew cask install skype
 brew cask install transmission
 brew cask install mactex
 brew cask install google-cloud-sdk
+brew cask install font-linux-libertine
 
 # Remove outdated versions from the cellar.
 brew cleanup
