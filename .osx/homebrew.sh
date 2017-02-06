@@ -12,7 +12,7 @@ brew install git
 # Dev Env
 brew install node
 brew install elixir
-brew install pandoc
+brew install pandoc pandoc-citeproc
 brew install rust
 
 # Terminal Deps
