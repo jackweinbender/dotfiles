@@ -11,9 +11,10 @@ brew install git
 
 # Dev Env
 brew install node
+brew install yarn
 brew install elixir
-brew install pandoc pandoc-citeproc
 brew install rust
+brew install pandoc pandoc-citeproc
 
 # Terminal Deps
 brew install zsh
