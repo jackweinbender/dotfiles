@@ -20,5 +20,5 @@ sudo npm install -g ember-cli
 
 # TeX Stuff
 sudo pacman -S --noconfirm pandoc pandoc-citeproc
-sudo pacman -S --noconfirm texlive-core texlive-localmanager-git
+sudo pacman -S --noconfirm texlive-core
 sudo pacman -S --noconfirm biber
