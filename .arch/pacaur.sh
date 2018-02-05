@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Install Atom and VS-Code
-pacaur -S --noconfirm atom
+# Install VS-Code
 pacaur -S --noconfirm visual-studio-code
 
 # TeX Package Manager
