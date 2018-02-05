@@ -12,7 +12,7 @@ brew install git
 # Dev Env
 brew install make
 brew install node
-brew install rust
+brew install rustup
 brew install python3
 brew install ruby
 brew install pandoc pandoc-citeproc
