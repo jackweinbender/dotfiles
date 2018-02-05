@@ -7,6 +7,7 @@ sudo pacman -S --noconfirm pacaur
 
 # GUI Utils
 sudo pacman -S --noconfirm chromium
+sudo pacman -S --noconfirm firefox
 sudo pacman -S --noconfirm dropbox
 sudo pacman -S --noconfirm lastpass
 
