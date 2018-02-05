@@ -10,26 +10,29 @@ brew upgrade
 brew install git
 
 # Dev Env
+brew install make
 brew install node
-brew install yarn
-brew install elixir
 brew install rust
+brew install python3
+brew install ruby
 brew install pandoc pandoc-citeproc
+brew install watchman
 
 # Terminal Deps
 brew install zsh
 
 # Cask
 brew cask install google-chrome
-brew cask install atom
+brew cask install firefox
+brew cask install visual-studio-code
 brew cask install keepingyouawake
 brew cask install dashlane
+brew cask install lastpass
 brew cask install dropbox
 brew cask install google-drive
-brew cask install skype
+brew cask install google-cloud-sdk
 brew cask install transmission
 brew cask install mactex
-brew cask install google-cloud-sdk
 brew cask install font-linux-libertine
 
 # Remove outdated versions from the cellar.
