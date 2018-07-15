@@ -29,7 +29,7 @@ brew cask install keepingyouawake
 brew cask install dashlane
 brew cask install lastpass
 brew cask install dropbox
-brew cask install google-drive
+brew cask install google-drive-file-stream
 brew cask install google-cloud-sdk
 brew cask install transmission
 brew cask install mactex
