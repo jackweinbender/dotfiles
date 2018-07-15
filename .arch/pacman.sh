@@ -5,21 +5,15 @@ sudo pacman -S --noconfirm git
 sudo pacman -S --noconfirm zsh
 sudo pacman -S --noconfirm pacaur
 
+# Screen Sharing Setup
+sudo pacman -S --noconfirm vino
+  ## Allows Win/Mac ScreenShareing
+  gsettings set org.gnome.Vino require-encryption false
+
 # GUI Utils
 sudo pacman -S --noconfirm chromium
 sudo pacman -S --noconfirm firefox
 sudo pacman -S --noconfirm dropbox
 sudo pacman -S --noconfirm lastpass
 
-# Development
-sudo pacman -S --noconfirm nodejs
-sudo pacman -S --noconfirm npm
-sudo pacman -S --noconfirm rustup
-
-sudo npm install -g yarn
-sudo npm install -g ember-cli
-
-# TeX Stuff
-sudo pacman -S --noconfirm pandoc pandoc-citeproc
-sudo pacman -S --noconfirm texlive-core
-sudo pacman -S --noconfirm biber
+sudo pacaur -S --noconfirm zoom

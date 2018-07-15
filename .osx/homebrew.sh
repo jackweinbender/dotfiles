@@ -14,7 +14,7 @@ brew install make
 brew install node
 brew install rustup
 brew install python3
-brew install ruby
+brew install rbenv
 brew install pandoc pandoc-citeproc
 brew install watchman
 
