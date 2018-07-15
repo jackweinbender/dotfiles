@@ -12,7 +12,12 @@ ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 # Enable non-standard inputs
 gsettings set org.gnome.desktop.input-sources show-all-sources true
 
-source ../symlinks.sh
 source pacman.sh
 source dev.sh
 source tex-pandoc.sh
+
+# Install oh-my-zsh
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+
+# Link Symlinks
+source ../symlinks.sh
