@@ -15,8 +15,12 @@ brew install node
 brew install rustup
 brew install python3
 brew install rbenv
-brew install pandoc pandoc-citeproc
 brew install watchman
+
+# My Pandoc and CSL Settings
+brew install pandoc pandoc-citeproc
+git clone https://github.com/jackweinbender/dot-pandoc.git ~/.pandoc
+git clone https://github.com/jackweinbender/dot-csl.git ~/.csl
 
 # Terminal Deps
 brew install zsh

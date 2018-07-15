@@ -6,6 +6,6 @@ sudo pacman -S --noconfirm texlive-core
 sudo pacman -S --noconfirm biber
 pacaur -S --noconfirm texlive-localmanager-git
 
-# My Pandoc and CSL Ssettings
+# My Pandoc and CSL Settings
 git clone https://github.com/jackweinbender/dot-pandoc.git ~/.pandoc
 git clone https://github.com/jackweinbender/dot-csl.git ~/.csl
