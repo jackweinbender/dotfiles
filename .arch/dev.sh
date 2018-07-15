@@ -1,7 +1,7 @@
 # Development
 
 # Code Editors
-pacaur -S --noconfirm visual-studio-code
+pacaur -S --noconfirm --noedit visual-studio-code-bin
 pacman -S --noconfirm vim
 
 ## Virtualbox
@@ -22,8 +22,8 @@ sudo pacman -S --noconfirm yarn
 sudo pacman -S --noconfirm rustup
 
 ## Ruby
-sudo pacaur -S --noconfirm rbenv
-sudo pacaur -S --noconfirm ruby-build
+pacaur -S --noconfirm --noedit rbenv
+pacaur -S --noconfirm --noedit ruby-build
 
 # Google Cloud SDK
-pacaur -S --noconfirm google-cloud-sdk
+pacaur -S --noconfirm --noedit google-cloud-sdk

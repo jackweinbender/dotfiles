@@ -17,5 +17,5 @@ sudo pacman -S --noconfirm dropbox
 sudo pacman -S --noconfirm lastpass
 
 # Pacaur
-sudo pacaur -S --noconfirm zoom
-pacaur -S --noconfirm typora
+pacaur -S --noconfirm --noedit zoom
+pacaur -S --noconfirm --noedit typora
