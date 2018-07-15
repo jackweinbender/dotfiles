@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Install Zsh and git
+# Install Essentials for completion
+sudo pacman -S --noconfirm pacaur
 sudo pacman -S --noconfirm git
 sudo pacman -S --noconfirm zsh
-sudo pacman -S --noconfirm pacaur
 
 # Screen Sharing Setup
 sudo pacman -S --noconfirm vino
@@ -16,4 +16,6 @@ sudo pacman -S --noconfirm firefox
 sudo pacman -S --noconfirm dropbox
 sudo pacman -S --noconfirm lastpass
 
+# Pacaur
 sudo pacaur -S --noconfirm zoom
+pacaur -S --noconfirm typora
