@@ -6,6 +6,9 @@ sudo -v
 # Keep-alive: update existing `sudo` time stamp until `setup.hs` has finished
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
+# Setup SSH Key
+ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
+
 # Install Homebrew
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
