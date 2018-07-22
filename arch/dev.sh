@@ -1,16 +1,18 @@
 # Development
 
 # Code Editors
-pacaur -S --noconfirm --noedit visual-studio-code-bin
-pacman -S --noconfirm vim
+pacaur -S --noconfirm --noedit code
+sudo pacman -S --noconfirm vim
 
 ## Virtualbox
+sudo pacman -S --noconfirm vagrant
 sudo pacman -S --noconfirm virtualbox
-  sudo pacman -S --noconfirm virtualbox-host-modules-arch
   ### This is specifically for the LTS install of Arch use 'linux-headers'
   ### if you aren't using the LTS install.
   sudo pacman -S --noconfirm linux-lts-headers
-sudo pacman -S --noconfirm vagrant
+  ## These are required for Arch, they replace the DKMS packages
+  sudo pacman -S --noconfirm virtualbox-host-modules-arch
+  sudo pacman -S --noconfirm virtualbox-guest-modules-arch
 
 ## Web & Node
 sudo pacman -S --noconfirm nodejs
