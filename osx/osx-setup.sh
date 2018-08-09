@@ -16,10 +16,10 @@ ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 source ~/.dotfiles/homebrew.sh
 
 # Setup Symlinks
-source ~/.dotfiles/symlinks/init.sh
+source ~/.dotfiles/osx/symlinks.sh
 
 # Setup Terminal
-source ~/.dotfiles/terminal/init.sh
+source ~/.dotfiles/oh-my-zsh/init.sh
 
 # Kill Terminal to force Restart
 echo "\n\n\nReopen Terminal when this window closes in 10 sec"
