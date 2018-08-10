@@ -9,17 +9,20 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # Setup SSH Key
 ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 
-# Install Homebrew
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-# Install the basics
+# Install the basics (Required)
 source ~/.dotfiles/homebrew.sh
 
-# Setup Symlinks
-source ~/.dotfiles/symlinks/init.sh
+# Setup Symlinks (Required)
+source ~/.dotfiles/osx/symlinks.sh
 
-# Setup Terminal
-source ~/.dotfiles/terminal/init.sh
+# Install Dev Tools
+# source ~/.dotfiles/development.sh
+
+# Install Dissertation Stuff
+# source ~/.dotfiles/dissertation.sh
+
+# Setup Terminal (Required)
+source ~/.dotfiles/oh-my-zsh/init.sh
 
 # Kill Terminal to force Restart
 echo "\n\n\nReopen Terminal when this window closes in 10 sec"

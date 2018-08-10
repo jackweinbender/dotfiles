@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+rm -rf ~/.gitconfig ~/.zshrc ~/.oh-my-zsh/themes/jack.zsh-theme
+
 # .gitconfig
 ln -s ~/.dotfiles/symlinks/.gitconfig ~/.gitconfig
 
