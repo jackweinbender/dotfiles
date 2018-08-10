@@ -9,16 +9,19 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # Setup SSH Key
 ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 
-# Install Homebrew
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-# Install the basics
+# Install the basics (Required)
 source ~/.dotfiles/homebrew.sh
 
-# Setup Symlinks
+# Setup Symlinks (Required)
 source ~/.dotfiles/osx/symlinks.sh
 
-# Setup Terminal
+# Install Dev Tools
+# source ~/.dotfiles/development.sh
+
+# Install Dissertation Stuff
+# source ~/.dotfiles/dissertation.sh
+
+# Setup Terminal (Required)
 source ~/.dotfiles/oh-my-zsh/init.sh
 
 # Kill Terminal to force Restart
