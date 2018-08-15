@@ -29,7 +29,9 @@ ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg_bold[red]%}●%{$reset_color%}"
 #
 PROMPT="
 %{$fg[blue]%}𐤀 \
-%{$terminfo[bold]$fg[green]%}%n \
-%{$fg[white]%}%~
+%{$terminfo[bold]$fg[yellow]%}%n\
+%{$fg[white]%}@\
+%{$fg[green]%}%m \
+%{$fg[white]%}~
 %{$reset_color%}${git_info}%{$fg[yellow]%}\
 » %{$reset_color%}"
