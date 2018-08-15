@@ -9,8 +9,8 @@
 local git_info='$(git_prompt_info)'
 ZSH_THEME_GIT_PROMPT_PREFIX="[%{$fg[cyan]%}⎇ %{$reset_color%}:"
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}] "
-ZSH_THEME_GIT_PROMPT_CLEAN=" %{$fg[green]%}▼"
-ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}△"
+ZSH_THEME_GIT_PROMPT_CLEAN=" %{$fg[cyan]%}▼"
+ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[yellow]%}△"
 
 ZSH_THEME_GIT_PROMPT_AHEAD="%{$fg[cyan]%}▴%{$reset_color%}"
 ZSH_THEME_GIT_PROMPT_BEHIND="%{$fg[magenta]%}▾%{$reset_color%}"
@@ -28,10 +28,9 @@ ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg_bold[red]%}●%{$reset_color%}"
 #
 #
 PROMPT="
-%{$fg[blue]%}𐤀 \
-%{$terminfo[bold]$fg[yellow]%}%n\
-%{$fg[white]%}@\
-%{$fg[green]%}%m \
+%{$fg[yellow]%}%n \
+%{$fg[white]%}𐤀 \
+%{$fg[cyan]%}%m \
 %{$fg[white]%}~
 %{$reset_color%}${git_info}%{$fg[yellow]%}\
 » %{$reset_color%}"
