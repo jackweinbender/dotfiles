@@ -155,7 +155,7 @@
 #  Logical      "An example", he said, "would be great".
 #
 
-QuoteStyle = Logical
+QuoteStyle = Traditional
 
 #####################################################################
 #
@@ -327,6 +327,12 @@ Silent
     \vrefwarning \upshape \headheight \headsep \hoffset \voffset
     \cdot \qquad
     \left \right
+    
+    ############
+    My Additions
+    ############
+
+    \halbwachs
 }
 
 #####################################################################
