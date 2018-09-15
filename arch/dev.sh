@@ -6,6 +6,7 @@ pacaur -S --noconfirm --noedit code
 sudo pacman -S --noconfirm vim
 
 ## Virtualbox
+sudo pacman -S --noconfirm linux-headers
 sudo pacman -S --noconfirm vagrant
 sudo pacman -S --noconfirm virtualbox
   ## These are required for Arch, they replace the DKMS packages
