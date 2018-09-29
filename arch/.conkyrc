@@ -1,7 +1,7 @@
 conky.config = {
     use_xft = true,
     xftalpha = 0.8,
-    update_interval = 1.0,
+    update_interval = 2.0,
     total_run_times = 0,
     own_window = true,
     own_window_transparent = true,
@@ -34,21 +34,27 @@ conky.config = {
     -- colors
     font = 'Cantarell:size=10',
     default_color = 'EEEEEE',
-    color1 = 'AABBFF',
-    color2 = 'FF993D',
-    color3 = 'AAAAAA',
- 
+    color1 = '7E9788',
+    color2 = '7997AD',
+    color3 = 'FF993D',
+    color4 = 'AAAAAA',
+    color5 = 'AAAAAA',
+    color6 = 'AAAAAA',
+    color7 = 'AAAAAA',
+    color8 = 'AAAAAA',
+
     -- layouting
-    template0 = [[${font Cantarell:size=12}${color}\1 ${color1}${hr 1}${font}]],
+    template0 = [[${font Cantarell:size=12}${color}\1 ${hr 1}${font}]],
     template1 = [[${color1}\1]],
-    template2 = [[${goto 80}${color3}]],
-    template3 = [[${goto 120}${color}${alignr}]],
+    template2 = [[${goto 80}${color2}]],
+    template3 = [[${goto 130}${color4}${alignr}]],
+    template4 = [[${goto 00}${color5}${alignr}]],
 };
  
 conky.text = [[
  
 ${template0 ${nodename}}
-${template1 Date}                                                           ${template3}${color3}${time %a, }${color}${time %e %B %G}
+${template1 Date}                                                           ${template3}${color}${time %a, }${time %e %B %G}
 ${template1 Time}                                                           ${template3}${time %l:%M %p %Z}
 ${template1 Hostname}                                                       ${template3}${nodename}
 ${template1 Kernel}                                                         ${template3}${kernel}
@@ -57,8 +63,7 @@ ${template1 CPU}                                                            ${te
 ## ${template1 CPU\ Temperature}                                               ${template3}${acpitemp}°C
 ## ${template1 HDD\ Temperature}                                               ${template3}${hddtemp /dev/sda}°C
  
-${template0 Processors}
-${template1 Load}               ${template2}${loadavg 1}                    ${template3}${loadgraph}
+${template0 Processors}         
 ${template1 Core\ 1}            ${template2}${cpu cpu1}%                    ${template3}${cpubar cpu1}
 ${template1 Core\ 2}            ${template2}${cpu cpu2}%                    ${template3}${cpubar cpu2}
 ${template1 Core\ 3}            ${template2}${cpu cpu3}%                    ${template3}${cpubar cpu3}
@@ -71,11 +76,12 @@ ${template1 Core\ 8}            ${template2}${cpu cpu8}%                    ${te
                                 ${template2}${top name 1}                   ${template3}${top cpu 1}
                                 ${template2}${top name 2}                   ${template3}${top cpu 2}
                                 ${template2}${top name 3}                   ${template3}${top cpu 3}
-
+                                
+${template1 Load}               ${template4}${loadgraph 25,225}
 ${template0 Memory}
 ${template1 RAM}                ${template2}${memperc}% used                ${template3}${mem} / ${memmax}
-                                                                            ${template3}${membar}
-                                                                            ${template3}${memgraph}
+                                ${template4}${color2}${membar 3,225}
+                                ${template4}${memgraph 25,225}
                                 ${template2}${color1}${hr 1}
                                 ${template2}${top_mem name 1}               ${template3}${top_mem mem_vsize 1}
                                 ${template2}${top_mem name 2}               ${template3}${top_mem mem_vsize 2}
@@ -86,13 +92,12 @@ ${template1 /}                  ${template2}${fs_free /} free               ${te
                                                                             ${template3}${fs_bar /}
 ${template1 Geniza}             ${template2}${fs_free /media/Geniza} free   ${template3}${fs_used /media/Geniza} / ${fs_size /media/Geniza}
                                                                             ${template3}${fs_bar /media/Geniza}
-# ${template1 IO\ Read}           ${template2}${diskio_read}                  ${template3}${diskiograph_read}
-# ${template1 IO\ Write}          ${template2}$diskio_write                   ${template3}$diskiograph_write
  
-${template0 Networking}
-${template1 Ip}                                                             ${template3}${addr enp37s0}
-${template1 Download}           ${template2}${downspeed enp37s0}               ${template3}${downspeedgraph enp37s0}
-${template1 Upload}             ${template2}${upspeed enp37s0}                 ${template3}${upspeedgraph enp37s0}
+${template0 Network}
+${template1 Local}                                                          ${template3}${addr enp37s0}
+${template1 External}                                                       ${template3}${curl http://ipinfo.io/ip 60}
+${template1 Download}           ${template2}${downspeed enp37s0}            ${template3}${downspeedgraph enp37s0}
+${template1 Upload}             ${template2}${upspeed enp37s0}              ${template3}${upspeedgraph enp37s0}
 ${template1 Total Down/Up}                                                  ${template3}${totaldown enp37s0}↓ / ${totalup enp37s0}↑
 
 ]];
