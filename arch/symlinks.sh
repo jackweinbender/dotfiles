@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-rm -rf $HOME/.gitconfig $HOME/.zshrc $HOME/.oh-my-zsh/themes/jack.zsh-theme
+rm -rf $HOME/.gitconfig \
+       $HOME/.zshrc \
+       $HOME/.oh-my-zsh/themes/jack.zsh-theme \
+       $HOME/.conkyrc \
+       $HOME/.config/autostart/conky.desktop
+
 
 # .gitconfig
 ln -s $HOME/.dotfiles/symlinks/.gitconfig $HOME/.gitconfig
@@ -13,3 +18,6 @@ ln -s $HOME/.dotfiles/symlinks/jack.zsh-theme $HOME/.oh-my-zsh/themes/jack.zsh-t
 
 # Conky dotfile
 ln -s $HOME/.dotfiles/arch/.conkyrc $HOME/.conkyrc
+
+# Autostart Scipts
+ln -s $HOME/.dotfiles/arch/autostart/conky.desktop $HOME/.config/autostart/conky.desktop
