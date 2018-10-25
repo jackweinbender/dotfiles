@@ -19,5 +19,8 @@ ln -s $HOME/.dotfiles/symlinks/jack.zsh-theme $HOME/.oh-my-zsh/themes/jack.zsh-t
 # Conky dotfile
 ln -s $HOME/.dotfiles/arch/.conkyrc $HOME/.conkyrc
 
+# Tmux Conf
+ln -s $HOME/.dotfiles/symlinks/tmux.conf $HOME/.tmux.conf
+
 # Autostart Scipts
 ln -s $HOME/.dotfiles/arch/autostart/conky.desktop $HOME/.config/autostart/conky.desktop
