@@ -13,11 +13,16 @@ sudo pacman -S --noconfirm virtualbox
   sudo pacman -S --noconfirm virtualbox-host-modules-arch
   sudo pacman -S --noconfirm virtualbox-guest-modules-arch
 
+## Docker
+sudo pacman -S --noconfirm docker
+sudo pacman -S --noconfirm docker-compose
+sudo pacman -S --noconfirm docker-machine
+
+sudo usermod -aG docker ${USER}
+sudo systemctl enable docker.service
+
 ## Web & Node
 sudo pacman -S --noconfirm nodejs
-sudo pacman -S --noconfirm yarn
-  ### Ember
-  sudo npm install -g ember-cli
 
 ## Rust
 sudo pacman -S --noconfirm rustup

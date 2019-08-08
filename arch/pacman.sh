@@ -14,8 +14,7 @@ sudo pacman -S --noconfirm vino
 sudo pacman -S --noconfirm chromium
 sudo pacman -S --noconfirm firefox
 sudo pacman -S --noconfirm dropbox
-sudo pacman -S --noconfirm lastpass
+sudo pacman -S --noconfirm conky
 
 # Pacaur
 pacaur -S --noconfirm --noedit zoom
-pacaur -S --noconfirm --noedit typora

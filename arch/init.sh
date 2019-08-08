@@ -14,11 +14,11 @@ gsettings set org.gnome.desktop.input-sources show-all-sources true
 
 source pacman.sh
 source dev.sh
-source tex-pandoc.sh
+# source tex-pandoc.sh
 source fonts.sh
-
-# Install oh-my-zsh
-sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
 # Link Symlinks
 source symlinks.sh
+
+# Install oh-my-zsh
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
