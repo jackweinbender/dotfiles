@@ -11,7 +11,13 @@ ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 
 # Enable non-standard inputs
 gsettings set org.gnome.desktop.input-sources show-all-sources true
+# Enable Natural Scrolling
+gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
 
+# Update OS
+sudo pacman -Syyu
+
+# Add my stuff
 source pacman.sh
 source dev.sh
 # source tex-pandoc.sh
