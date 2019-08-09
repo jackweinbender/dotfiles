@@ -18,3 +18,4 @@ sudo pacman -S --noconfirm conky
 
 # Pacaur
 pacaur -S --noconfirm --noedit zoom
+pacaur -S --noconfirm --noedit slack-desktop

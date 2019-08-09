@@ -20,8 +20,8 @@ conky.config = {
  
     -- placement
     alignment = 'top_right',
-    gap_x = 25,
-    gap_y = 50,
+    gap_x = 0,
+    gap_y = 0,
  
     -- default drawing
     draw_shades = false,
