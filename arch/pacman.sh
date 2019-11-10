@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Install Essentials for completion
-sudo pacman -S --noconfirm pacaur
 sudo pacman -S --noconfirm git
 sudo pacman -S --noconfirm zsh
 
@@ -13,9 +12,9 @@ sudo pacman -S --noconfirm vino
 # GUI Utils
 sudo pacman -S --noconfirm chromium
 sudo pacman -S --noconfirm firefox
-sudo pacman -S --noconfirm dropbox
 sudo pacman -S --noconfirm conky
 
-# Pacaur
-pacaur -S --noconfirm --noedit zoom
-pacaur -S --noconfirm --noedit slack-desktop
+# AUR packages
+yay -S --noconfirm dropbox
+yay -S --noconfirm zoom
+yay -S --noconfirm slack-desktop

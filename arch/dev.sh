@@ -2,7 +2,7 @@
 
 # Code Editors
 sudo pacman -S --noconfirm gconf
-pacaur -S --noconfirm --noedit code
+yay -S --noconfirm code
 sudo pacman -S --noconfirm vim
 
 ## Virtualbox
@@ -28,8 +28,8 @@ sudo pacman -S --noconfirm nodejs
 sudo pacman -S --noconfirm rustup
 
 ## Ruby
-pacaur -S --noconfirm --noedit rbenv
-pacaur -S --noconfirm --noedit ruby-build
+yay -S --noconfirm rbenv
+yay -S --noconfirm ruby-build
 
 # Google Cloud SDK
-pacaur -S --noconfirm --noedit google-cloud-sdk
+yay -S --noconfirm google-cloud-sdk

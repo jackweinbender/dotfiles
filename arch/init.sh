@@ -9,13 +9,16 @@ while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 # Setup SSH Keys
 ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 
-# Enable non-standard inputs
-gsettings set org.gnome.desktop.input-sources show-all-sources true
-# Enable Natural Scrolling
-gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
-
 # Update OS
 sudo pacman -Syyu
+
+# Install yay
+## Install yay for AUR
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si --noconfirm
+cd ../
+rm -rf yay
 
 # Add my stuff
 source pacman.sh

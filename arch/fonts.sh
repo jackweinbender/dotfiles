@@ -1,10 +1,9 @@
 # Fonts
 sudo pacman -S --noconfirm ttf-linux-libertine
 sudo pacman -S --noconfirm ttf-hack 
-pacaur -S --noconfirm --noedit ttf-ms-fonts
-pacaur -S --noconfirm --noedit ttf-mac-fonts
-pacaur -S --noconfirm --noedit ttf-adobe-fonts
-# pacaur -S --noconfirm --noedit ttf-sbl-greek
-# pacaur -S --noconfirm --noedit ttf-sbl-hebrew
-# pacaur -S --noconfirm --noedit ttf-ancient-fonts
-# pacaur -S --noconfirm --noedit ttf-sil-fonts
+yay -S --noconfirm --noedit ttf-ms-fonts
+yay -S --noconfirm --noedit ttf-mac-fonts
+yay -S --noconfirm --noedit ttf-sbl-greek
+yay -S --noconfirm --noedit ttf-sbl-hebrew
+yay -S --noconfirm --noedit ttf-ancient-fonts
+yay -S --noconfirm --noedit ttf-sil-fonts
