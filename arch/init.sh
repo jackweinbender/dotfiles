@@ -7,10 +7,11 @@ sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 # Setup SSH Keys
-ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
+#ssh-keygen -t rsa -b 4096 -C "jack.weinbender@gmail.com"
 
 # Update OS
 sudo pacman -Syyu
+sudo pacman -S base-devel
 
 # Install yay
 ## Install yay for AUR
@@ -28,6 +29,7 @@ source fonts.sh
 
 # Link Symlinks
 source symlinks.sh
+source disk.sh
 
 # Install oh-my-zsh
 sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"

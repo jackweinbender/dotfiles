@@ -32,4 +32,4 @@ yay -S --noconfirm rbenv
 yay -S --noconfirm ruby-build
 
 # Google Cloud SDK
-yay -S --noconfirm google-cloud-sdk
+#yay -S --noconfirm google-cloud-sdk
