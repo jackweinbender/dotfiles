@@ -5,24 +5,47 @@
 # for other OSes, you may need to install it first using the
 # appropriate package manager.
 
+# Git is not installed by default in MacOS
+
 # REQUIREMENTS
 # 1. git
 # 2. zsh
 
 # Cleanup old install, if present
-rm -rf ~/.oh-my-zsh
+rm -rf "$HOME/.oh-my-zsh"
 
 # Install oh-my-zsh
-git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh
+git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+
+echo "Generating ~/.zshrc ..."
 
 # Create the template local file to ~/.zshrc
-echo "# ZSHRC file for $USER@$HOSTNAME [$(date +%m-%d-%Y)]\n" > ~/.zshrc
+cat << EOM > "$HOME/.zshrc"
+#! /bin/zsh
+
+# ---
+# ZSHRC file for $USER@$(hostname) 
+# Generated on: $(date +%F)
+# ---
+
+EOM
 
 # Bootstrap variables
-cwd="$(dirname $(readlink -f $0))"
+cwd="$(dirname "$(readlink -f "$0")")"
 DOTFILES="$(dirname "$cwd")"
 
-echo "export DOTFILES=$DOTFILES\n" >> ~/.zshrc
+# Export the base DOTFILES variable
+cat << EOM >> ~/.zshrc
+# Path for the "dotfiles" (defaults to ~/.dotfiles )
+export DOTFILES=${DOTFILES}
 
+EOM
+
+# Pull in the shared .zshrc file
+cat << EOM >> ~/.zshrc
 # include the base .zshrc file from this repo
-echo "source $DOTFILES/zsh/.zshrc\n" >> ~/.zshrc
+source \$DOTFILES/zsh/.zshrc
+
+EOM
+
+echo "Done."
