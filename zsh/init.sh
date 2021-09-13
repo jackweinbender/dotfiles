@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # This init script assumes that zsh has already been installed.
-# As of Sept. 2021, zsh is installed by default in MacOS, but 
+# As of Sept. 2021, zsh is installed by default in MacOS, but
 # for other OSes, you may need to install it first using the
 # appropriate package manager.
 
@@ -20,7 +20,7 @@ git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
 echo "Generating ~/.zshrc ..."
 
 # Create the template local file to ~/.zshrc
-cat << EOM > "$HOME/.zshrc"
+cat <<EOM >"$HOME/.zshrc"
 #! /bin/zsh
 
 # ---
@@ -31,18 +31,18 @@ cat << EOM > "$HOME/.zshrc"
 EOM
 
 # Bootstrap variables
-cwd="$(dirname "$(readlink -f "$0")")"
-DOTFILES="$(dirname "$cwd")"
+cwd="$(realpath "$0")"
+DOTFILES="$(realpath "$cwd")"
 
 # Export the base DOTFILES variable
-cat << EOM >> ~/.zshrc
+cat <<EOM >>~/.zshrc
 # Path for the "dotfiles" (defaults to ~/.dotfiles )
 export DOTFILES=${DOTFILES}
 
 EOM
 
 # Pull in the shared .zshrc file
-cat << EOM >> ~/.zshrc
+cat <<EOM >>~/.zshrc
 # include the base .zshrc file from this repo
 source \$DOTFILES/zsh/.zshrc
 
