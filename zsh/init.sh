@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/zsh
 
 # This init script assumes that zsh has already been installed.
 # As of Sept. 2021, zsh is installed by default in MacOS, but
