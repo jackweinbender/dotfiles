@@ -11,12 +11,6 @@
 # 1. git
 # 2. zsh
 
-# Cleanup old install, if present
-rm -rf "$HOME/.oh-my-zsh"
-
-# Install oh-my-zsh
-git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
-
 echo "Generating ~/.zshrc ..."
 
 # Create the template local file to ~/.zshrc

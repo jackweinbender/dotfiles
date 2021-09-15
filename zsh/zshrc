@@ -1,10 +1,8 @@
-# Path to your oh-my-zsh installation.
-export ZSH=~/.oh-my-zsh
+#! /bin/zsh
+autoload -U promptinit
 
-# Set the current dir to the ZSH_CUSTOM path
-ZSH_CUSTOM="$DOTFILES/zsh"
-ZSH_THEME="jack"
+promptinit
 
-plugins=(git)
+prompt pure
 
-source $ZSH/oh-my-zsh.sh
+zstyle :prompt:pure:git:stash show yes
