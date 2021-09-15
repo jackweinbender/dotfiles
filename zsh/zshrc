@@ -1,8 +1,8 @@
 #! /bin/zsh
 autoload -U promptinit
 
+# Initialize the prompt
 promptinit
 
+# Set to pure prompt
 prompt pure
-
-zstyle :prompt:pure:git:stash show yes

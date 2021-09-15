@@ -29,7 +29,7 @@ DOTFILES="$(dirname "${0:a:h}")"
 
 # Export the base DOTFILES variable
 cat <<EOM >>~/.zshrc
-# Path for the "dotfiles" (defaults to ~/.dotfiles)
+# Path for the "dotfiles" (defaults to ~/dotfiles)
 export DOTFILES=${DOTFILES}
 
 EOM
