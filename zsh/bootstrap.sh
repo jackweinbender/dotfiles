@@ -11,12 +11,6 @@
 # 1. git
 # 2. zsh
 
-# Cleanup old install, if present
-rm -rf "$HOME/.oh-my-zsh"
-
-# Install oh-my-zsh
-git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
-
 echo "Generating ~/.zshrc ..."
 
 # Create the template local file to ~/.zshrc
@@ -35,7 +29,7 @@ DOTFILES="$(dirname "${0:a:h}")"
 
 # Export the base DOTFILES variable
 cat <<EOM >>~/.zshrc
-# Path for the "dotfiles" (defaults to ~/.dotfiles)
+# Path for the "dotfiles" (defaults to ~/dotfiles)
 export DOTFILES=${DOTFILES}
 
 EOM
