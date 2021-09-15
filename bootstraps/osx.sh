@@ -6,7 +6,8 @@
 # Install core utils:
 brew install \
   git \
-  zsh
+  zsh \
+  pure
 
 # Clone this repo into the user's HOME dir
-git clone git@github.com:jackweinbender/dotfiles.git $HOME/.dotfiles
+git clone git@github.com:jackweinbender/dotfiles.git $HOME/dotfiles
