@@ -1,10 +1,13 @@
-# Enable non-standard inputs
-gsettings set org.gnome.desktop.input-sources show-all-sources true
-# Enable Natural Scrolling
-gsettings set org.gnome.desktop.peripherals.mouse natural-scroll true
+#! /bin/bash
 
-#gsettings set org.gnome.Terminal.Legacy.Settings headerbar false
-#gsettings set org.gnome.desktop.wm.preferences button-layout 'minimize,close'
+# Install Pop stuff
+source "$DOTFILES/gnome/pop_shell_install.sh"
+source "$DOTFILES/gnome/pop_theme_install.sh"
 
-#yay -S --noconfirm gnome-shell-extension-dash-to-dock
-yay -S --noconfirm materia-gtk-theme
+# Enable Pop theme
+source "$DOTFILES/gnome/pop_shell_enable_theme.sh"
+
+# Other Gnome settings: Natural scrolling, etc.
+source "$DOTFILES/gnome/settings.sh"
+
+source "$DOTFILES/gnome/restart-shell.sh"
