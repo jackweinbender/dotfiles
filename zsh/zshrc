@@ -1,8 +1,15 @@
 #! /bin/zsh
-autoload -U promptinit
+#! /bin/zsh
 
-# Initialize the prompt
-promptinit
+# Load version control information
+autoload -Uz vcs_info
+precmd() { vcs_info }
 
-# Set to pure prompt
-prompt pure
+# Format the vcs_info_msg_0_ variable
+zstyle ':vcs_info:git:*' formats '/%b/'
+
+# Set up the prompt
+setopt PROMPT_SUBST
+
+PROMPT='%F{green}%n%f 𐤀 %F{cyan}%m%f ${vcs_info_msg_0_}
+%F{245}%2~%f %F{yellow}% » %f'
