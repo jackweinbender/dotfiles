@@ -1,9 +1,9 @@
 #! /bin/bash
 
 # Check for GIT
-if ! command -v <the_command> &> /dev/null
+if ! command -v git &> /dev/null
 then
-    echo "Installing XCode Dev Tools"
+    echo "${green}Installing XCode Dev Tools${\green}"
     xcode-select --install
 fi
 
