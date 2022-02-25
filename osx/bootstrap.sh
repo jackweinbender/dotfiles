@@ -8,6 +8,12 @@ then
     read -r -p "Once installation is complete, press any key to continue..." key
 fi
 
+read -p "Would you like to check for updates to MacOS before proceeding? [y/N]" -n 1 -r
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    softwareupdate -a -l
+fi
+
 # Clone dotfiles
 git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
 
