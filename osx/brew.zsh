@@ -1,5 +1,6 @@
 # Core (Don't use Apple's version)
 brew install git
+brew install bitwarden-cli
 
 # Development
 brew install docker
