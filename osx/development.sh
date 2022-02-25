@@ -4,3 +4,4 @@ brew install rbenv
 brew install rustup
 brew install python3
 brew install watchman
+brew install docker
