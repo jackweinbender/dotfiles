@@ -1,7 +1,6 @@
 # Dev Env
-brew install node
-brew install yarn
+brew install nvm
+brew install rbenv
 brew install rustup
 brew install python3
-brew install rbenv
 brew install watchman
