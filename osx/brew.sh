@@ -10,7 +10,7 @@ brew install python3
 brew install watchman
 
 # Cask
-brew cask install brave-browser
-brew cask install firefox
-brew cask install visual-studio-code
-brew cask install spotify
+brew install --cask brave-browser
+brew install --cask firefox
+brew install --cask visual-studio-code
+brew install --cask spotify
