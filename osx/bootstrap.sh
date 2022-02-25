@@ -15,7 +15,7 @@ function prompt_for_update(){
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]
     then
-        update_osx()
+        update_osx();
     fi
 }
 
@@ -36,10 +36,10 @@ function install_brew_recipes(){
 }
 
 # Main
-command -v git || install_devtools()
-prompt_for_update()
+command -v git || install_devtools();
+prompt_for_update();
 
-clone_dotfiles()
-setup_zsh()
-brew_init()
-install_brew_recipes()
+clone_dotfiles();
+setup_zsh();
+brew_init();
+install_brew_recipes();
