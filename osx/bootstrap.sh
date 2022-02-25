@@ -9,12 +9,12 @@ then
 fi
 
 read -p "Would you like to check for updates to MacOS before proceeding? [Y/n]" -n 1 -r
-echo #
+echo ''
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     softwareupdate -a -l
 fi
-echo #
+echo ''
 
 # Clone dotfiles
 git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
