@@ -23,10 +23,10 @@ function install_brew_recipes(){
 }
 
 # Make sure Git is installed first
-command -v git || install_devtools();
+command -v git || install_devtools()
 
 # Strapit
-clone_dotfiles();
-setup_zsh();
-brew_init();
-install_brew_recipes();
+clone_dotfiles()
+setup_zsh()
+brew_init()
+install_brew_recipes()
