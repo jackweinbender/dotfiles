@@ -10,14 +10,15 @@ function update_osx(){
     softwareupdate -a -l
 }
 
-function prompt_for_update(){
-    read -p "Would you like to check for updates to MacOS before proceeding? [Y/n]"  -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Nn]$ ]]
-    then
-        update_osx();
-    fi
+function ask_yes_or_no() {
+    read -p "$1 ([y]es or [N]o): "
+    case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
+        y|yes) echo "yes" ;;
+        *)     echo "no" ;;
+    esac
 }
+
+
 
 function clone_dotfiles(){
     git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
@@ -37,7 +38,7 @@ function install_brew_recipes(){
 
 # Main
 command -v git || install_devtools();
-prompt_for_update();
+ask_yes_or_no();
 
 clone_dotfiles();
 setup_zsh();
