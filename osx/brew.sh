@@ -10,6 +10,7 @@ brew install python3
 brew install watchman
 
 # Cask
+brew install --cask iterm2
 brew install --cask brave-browser
 brew install --cask firefox
 brew install --cask visual-studio-code
