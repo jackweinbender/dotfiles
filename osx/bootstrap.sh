@@ -7,7 +7,7 @@ function install_devtools(){
 }
 
 # Make sure Git is installed first
-command -v git || install_devtools()
+command -v git || install_devtools
 
 git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
 source $HOME/.dotfiles/zsh/bootstrap.sh
