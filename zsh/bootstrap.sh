@@ -37,7 +37,7 @@ EOM
 # Pull in the shared .zshrc file
 cat <<EOM >>~/.zshrc
 # include the base .zshrc file from this repo
-source \$DOTFILES/zsh/zshrc
+source \$DOTFILES/zsh/zshrc.zsh
 
 EOM
 

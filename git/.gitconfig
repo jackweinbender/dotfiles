@@ -1,5 +1,6 @@
 [user]
-	email = jack.weinbender@gmail.com
-	name = Jack Weinbender
+email = jack@weinbender.io
+name = Jack Weinbender
+
 [core]
-	editor = code --wait
+editor = code --wait

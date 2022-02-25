@@ -23,6 +23,13 @@ setopt hist_ignore_space      # ignore commands that start with space
 setopt hist_verify            # show command with history expansion to user before running it
 setopt share_history          # share command history data
 
+# Autocompletion using arrow keys (based on history)
+bindkey '\e[A' history-search-backward # up
+bindkey '\e[B' history-search-forward  # down
+
+# NO BEEP
+setopt NO_BEEP 
+
 # Set up the prompt
 setopt PROMPT_SUBST
 
