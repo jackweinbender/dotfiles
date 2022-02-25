@@ -10,7 +10,7 @@ fi
 
 read -p "Would you like to check for updates to MacOS before proceeding? [Y/n]" -n 1 -r
 echo ''
-if [[ ! $REPLY =~ ^[Nn]$ ]]
+if [[ $REPLY =~ ^[Nn]$ ]]
 then
     softwareupdate -a -l
 fi
