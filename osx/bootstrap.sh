@@ -8,7 +8,7 @@ then
     read -r -p "Once installation is complete, press any key to continue..." key
 fi
 
-read -p "Would you like to check for updates to MacOS before proceedingg? [Y/n]" -n 1 -r
+read -p "Would you like to check for updates to MacOS before proceeding? [Y/n]" -n 1 -r
 echo ''
 if [[ ! $REPLY =~ ^[Nn]$ ]]
 then
