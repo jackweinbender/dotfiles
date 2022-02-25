@@ -6,19 +6,14 @@ function install_devtools(){
     read -r -p "Once installation is complete, press any key to continue..." key
 }
 
-function update_osx(){
-    softwareupdate -a -l
+function prompt_for_update(){
+    read -p "Would you like to check for updates to MacOS before proceeding? [Y/n]"  -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]
+    then
+        [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+    fi
 }
-
-function ask_yes_or_no() {
-    read -p "$1 ([y]es or [N]o): "
-    case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
-        y|yes) echo "yes" ;;
-        *)     echo "no" ;;
-    esac
-}
-
-
 
 function clone_dotfiles(){
     git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
@@ -36,10 +31,10 @@ function install_brew_recipes(){
     source $HOME/.dotfiles/osx/brew.sh
 }
 
-# Main
+# Make sure Git is installed first
 command -v git || install_devtools();
-ask_yes_or_no();
 
+# Strapit
 clone_dotfiles();
 setup_zsh();
 brew_init();
