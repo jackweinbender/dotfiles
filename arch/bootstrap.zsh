@@ -1,3 +1,5 @@
+source helpers.zsh
+
 # Update OS
 sudo pacman -Syyu
 
