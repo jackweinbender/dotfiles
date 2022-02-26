@@ -1,4 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/zsh
+
+# Arch Helpers
+source helpers.zsh
 
 # GUI Utils
 sudo pacman -S --noconfirm brave
