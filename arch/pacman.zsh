@@ -1,8 +1,5 @@
 #!/bin/zsh
 
-# Arch Helpers
-source helpers.zsh
-
 # GUI Utils
 sudo pacman -S --noconfirm brave
 sudo pacman -S --noconfirm chromium
