@@ -2,10 +2,14 @@
 sudo pacman -Syyu
 sudo pacman -S base-devel
 
-# Install yay
-## Install yay for AUR
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si --noconfirm
-cd ../
-rm -rf yay
+pacman -S --needed git base-devel && install_from_git yay
+
+function install_from_git()
+{
+  git clone https://aur.archlinux.org/${1}.git
+  cd $1
+  makepkg -si --noconfirm
+  cd ../ && rm -rf $1
+}
+
+
