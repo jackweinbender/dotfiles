@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 function aws_init() {
   aws configure
 }

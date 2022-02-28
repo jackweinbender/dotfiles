@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # Core (Don't use Apple's version)
 brew install git
 brew install bitwarden-cli

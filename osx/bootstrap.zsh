@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env zsh
 
 function install_devtools() {
     echo "Installing XCode Dev Tools..."
