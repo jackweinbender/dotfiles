@@ -11,7 +11,7 @@
 # 1. git
 # 2. zsh
 
-echo "Generating ~/.zshrc ..."
+info "Generating ~/.zshrc ..."
 
 # Create the template local file to ~/.zshrc
 cat <<EOM >"$HOME/.zshrc"
@@ -36,9 +36,13 @@ EOM
 
 # Pull in the shared .zshrc file
 cat <<EOM >>~/.zshrc
-# include the base .zshrc file from this repo
-source \$DOTFILES/zsh/zshrc.zsh
+# include the base .zshrc file from this repo as well as
+# all of the helper files in the \`zsh/lib\` dir
 
 EOM
 
-echo "Done."
+for file in $DOTFILES/zsh/lib/*.zsh; do
+  echo "source $file" >>~/.zshrc
+done
+
+success "Done."

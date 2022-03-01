@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 function install_devtools() {
-    echo "Installing XCode Dev Tools..."
+    info "Installing XCode Dev Tools..."
     xcode-select --install
     read -r -p "Once installation is complete, press any key to continue..." key
 }
