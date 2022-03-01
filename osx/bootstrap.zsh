@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+set -e
+
 function install_devtools() {
     info "Installing XCode Dev Tools..."
     xcode-select --install
@@ -10,6 +12,7 @@ function install_devtools() {
 command -v git || install_devtools
 
 git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
+
 source $HOME/.dotfiles/zsh/bootstrap.zsh
 source $HOME/.dotfiles/osx/brew-init.zsh
 source $HOME/.dotfiles/osx/brew.zsh
