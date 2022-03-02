@@ -27,6 +27,7 @@ brew install --cask brave-browser
 brew install --cask firefox
 brew install --cask visual-studio-code
 brew install --cask spotify
+brew install --cask discord
 
 # Start Services
 brew services start docker
