@@ -41,7 +41,7 @@ cat <<EOM >>~/.zshrc
 
 EOM
 
-for file in $DOTFILES/zsh/lib/*.zsh; do
+for file in $DOTFILES/zsh/lib/**/*.zsh; do
   echo "source $file" >>~/.zshrc
 done
 

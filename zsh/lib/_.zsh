@@ -1,4 +1,4 @@
 function init() {
-  source $DOTFILES/zsh/_.zsh
+  source $DOTFILES/zsh/bootstrap.zsh
   source $HOME/.zshrc
 }
