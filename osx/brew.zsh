@@ -10,7 +10,9 @@ brew install docker
 brew install postgresql
 brew install redis
 brew install watchman
+brew install kubectl
 brew install awscli
+brew install aws-iam-authenticator
 brew install ansible
 
 # Languages
