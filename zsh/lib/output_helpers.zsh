@@ -1,15 +1,17 @@
+CURSOR='==>'
+
 function warn {
-  echo -e "${yellow}>>${end} ${1}"
+  echo -e "$(yellow $CURSOR) $1"
 }
 
 function error {
-  echo -e "${red}>>${end} ${1}"
+  echo -e "$(red $CURSOR) $1"
 }
 
 function success {
-  echo -e "${green}>>${end} ${1}"
+  echo -e "$(green $CURSOR) $1"
 }
 
 function info {
-  echo -e "${blue}>>${end} ${1}"
+  echo -e "$(blue $CURSOR) $1"
 }

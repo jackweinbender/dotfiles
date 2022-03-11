@@ -17,68 +17,72 @@ purpleb="\033[1;35m"
 lightblue="\033[0;36m"
 lightblueb="\033[1;36m"
 
+function colorize {
+  echo -e "${1}$2${end}"
+}
+
 function black {
-  echo -e "${black}${1}${end}"
+  colorize $black $1
 }
 
 function blackb {
-  echo -e "${blackb}${1}${end}"
+  colorize $blackb $1
 }
 
 function white {
-  echo -e "${white}${1}${end}"
+  colorize $white $1
 }
 
 function whiteb {
-  echo -e "${whiteb}${1}${end}"
+  colorize $whiteb $1
 }
 
 function red {
-  echo -e "${red}${1}${end}"
+  colorize $red $1
 }
 
 function redb {
-  echo -e "${redb}${1}${end}"
+  colorize $redb $1
 }
 
 function green {
-  echo -e "${green}${1}${end}"
+  colorize $green $1
 }
 
 function greenb {
-  echo -e "${greenb}${1}${end}"
+  colorize $greenb $1
 }
 
 function yellow {
-  echo -e "${yellow}${1}${end}"
+  colorize $yellow $1
 }
 
 function yellowb {
-  echo -e "${yellowb}${1}${end}"
+  colorize $yellowb $1
 }
 
 function blue {
-  echo -e "${blue}${1}${end}"
+  colorize $blue $1
 }
 
 function blueb {
-  echo -e "${blueb}${1}${end}"
+  colorize $blueb $1
 }
 
 function purple {
-  echo -e "${purple}${1}${end}"
+  colorize $purple $1
 }
 
 function purpleb {
-  echo -e "${purpleb}${1}${end}"
+  colorize $purpleb $1
 }
 
 function lightblue {
-  echo -e "${lightblue}${1}${end}"
+  colorize $lightblue $1
 }
 
 function lightblueb {
-  echo -e "${lightblueb}${1}${end}"
+  colorize $lightblueb $1
 }
 
 function colors {
@@ -98,26 +102,4 @@ function colors {
   purpleb "purpleb"
   lightblue "lightblue"
   lightblueb "lightblueb"
-}
-
-function colortest {
-  if [[ -n "$1" ]]; then
-    T="$1"
-  fi
-  T='gYw' # The test text
-
-  echo -e "\n                 40m     41m     42m     43m\
-       44m     45m     46m     47m"
-
-  for FGs in '    m' '   1m' '  30m' '1;30m' '  31m' '1;31m' '  32m' \
-    '1;32m' '  33m' '1;33m' '  34m' '1;34m' '  35m' '1;35m' \
-    '  36m' '1;36m' '  37m' '1;37m'; do
-    FG=${FGs// /}
-    echo -en " $FGs \033[$FG  $T  "
-    for BG in 40m 41m 42m 43m 44m 45m 46m 47m; do
-      echo -en "$EINS \033[$FG\033[$BG  $T  \033[0m"
-    done
-    echo
-  done
-  echo
 }
