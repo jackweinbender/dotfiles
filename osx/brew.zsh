@@ -16,7 +16,6 @@ brew install aws-iam-authenticator
 brew install ansible
 
 # Languages
-brew install nvm
 brew install rbenv
 brew install rustup
 brew install python3

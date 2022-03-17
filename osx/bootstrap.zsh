@@ -16,3 +16,4 @@ git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
 source $HOME/.dotfiles/zsh/bootstrap.zsh
 source $HOME/.dotfiles/osx/brew-init.zsh
 source $HOME/.dotfiles/osx/brew.zsh
+source $HOME/.dotfiles/osx/non-brew.zsh
