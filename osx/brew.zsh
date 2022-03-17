@@ -14,6 +14,7 @@ brew install kubectl
 brew install awscli
 brew install aws-iam-authenticator
 brew install ansible
+brew install stripe/stripe-cli/stripe
 
 # Languages
 brew install rbenv
