@@ -1,3 +1,2 @@
 #! /bin/zsh
-
-source zsh/bootstrap.sh
+source zsh/bootstrap.zsh
