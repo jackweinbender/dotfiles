@@ -4,3 +4,6 @@ name = Jack Weinbender
 
 [core]
 editor = code --wait
+
+[push]
+	autoSetupRemote = true
