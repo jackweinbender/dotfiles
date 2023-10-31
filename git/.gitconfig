@@ -6,4 +6,7 @@ name = Jack Weinbender
 editor = code --wait
 
 [push]
-	autoSetupRemote = true
+autoSetupRemote = true
+
+[init]
+defaultBranch = main
