@@ -4,6 +4,7 @@
 brew install git
 brew install bitwarden-cli
 brew install ykman
+brew install gpg
 
 # Development Infra
 brew install docker
@@ -11,6 +12,9 @@ brew install postgresql
 brew install redis
 brew install watchman
 brew install kubectl
+brew install kubectx
+brew install k9s
+brew install tfenv
 brew install awscli
 
 # Languages
