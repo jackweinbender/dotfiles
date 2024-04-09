@@ -7,5 +7,5 @@ function bootstrap_init() {
   source zsh/lib/output_helpers.zsh
 }
 
-bootstrap_init()
+bootstrap_init
 source zsh/bootstrap.zsh
