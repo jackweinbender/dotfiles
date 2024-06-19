@@ -7,4 +7,3 @@ sudo pacman -Syyu
 pacman -S --needed git base-devel && install_from_git yay
 
 source pacman.zsh
-source keygen.zsh
