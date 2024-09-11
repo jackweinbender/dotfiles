@@ -11,9 +11,10 @@ function install_devtools() {
 # Make sure Git is installed first
 command -v git || install_devtools
 
-git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
+if [[ ! -d $HOME/.dotfiles ]] then;
+    git clone https://github.com/jackweinbender/dotfiles.git $HOME/.dotfiles
+fi
 
 source $HOME/.dotfiles/zsh/bootstrap.zsh
 source $HOME/.dotfiles/osx/brew-init.zsh
 source $HOME/.dotfiles/osx/brew.zsh
-source $HOME/.dotfiles/osx/non-brew.zsh
