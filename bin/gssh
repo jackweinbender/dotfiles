@@ -1,0 +1,22 @@
+#!/bin/bash
+project=''
+hostname=''
+
+while getopts 'p:z:h:' flag; do
+  case "${flag}" in
+  p) project=${OPTARG} ;;
+  h) hostname=${OPTARG} ;;
+  *) printf "Usage: gssh -p <project> -h <hostname>" ;;
+  esac
+done
+
+if [ -z $project ]; then
+  echo "Project (-p) is required."
+  exit 1
+fi
+if [ -z $hostname ]; then
+  echo "Hostname (-h) is required."
+  exit 1
+fi
+
+gcloud compute --project=${project} ssh --internal-ip ${hostname}
