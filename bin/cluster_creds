@@ -54,16 +54,20 @@ private_cluster_creds() {
   gcloud container clusters --project=$1 --location=$2 get-credentials --internal-ip $3 || return 1
 }
 
-private_cluster_creds() {
+public_cluster_creds() {
   gcloud container clusters --project=$1 --location=$2 get-credentials $3 || return 1
 }
 
-clusters_for_project v3-skunk | while read project location cluster; do
+clusters_for_project $1 | while read project location cluster; do
   if ! [[ -z $DEBUG ]]; then
     info "project:  $project"
     info "location: $location"
     info "cluster:  $cluster"
   fi
+
+  # we prefer the private ip for the control plane locally, since we have zscaler, but fall back to public
+  # for those few cases where the private ip is not available. Once we switch to DNS-based control plane,
+  # we can remove this check.
   (private_cluster_creds $project $location $cluster && success "Found private ip for control plane.") ||
     (public_cluster_creds $project $location $cluster && warn "Found public ip for control plane.") ||
     error "Could not find control plane ip for $cluster in $project / $location."
