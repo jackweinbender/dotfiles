@@ -1,9 +1,8 @@
 # Aliases
 
 ## kubectl
-alias kl=kubectl
-alias klp=kubectl get pods
-alias kll=kubectl logs
+alias k="kubectl"
+alias kx="kubectl ctx"
 
-## Kubectx
-alias kx=kubectx
+## gcloud
+alias gauth="gcloud auth login --update-adc"
