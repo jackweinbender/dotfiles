@@ -1,0 +1,70 @@
+#!/bin/bash
+# Color stuff
+end="\033[0m"
+red="\033[0;31m"
+green="\033[0;32m"
+yellow="\033[0;33m"
+blue="\033[0;36m"
+CURSOR='==>'
+function colorize {
+  echo -e "${1}${@:2}${end}"
+}
+function red {
+  colorize $red $@
+}
+function green {
+  colorize $green $@
+}
+function blue {
+  colorize $blue $@
+}
+function yellow {
+  colorize $yellow $@
+}
+
+function warn {
+  echo -e "$CURSOR $(yellow $1)"
+}
+function error {
+  echo -e "$CURSOR $(red $1)"
+}
+function success {
+  echo -e "$CURSOR $(green $1)"
+}
+function info {
+  echo -e "$CURSOR $(blue $1)"
+}
+
+
+
+each_project() {
+  for project in $(gcloud projects list --format="value(projectId)" | grep -v "sys-"); do
+    echo $project
+  done
+}
+
+clusters_for_project() {
+  IFS=$'\n'
+  for cluster in $(gcloud container clusters list --project=$1 --format="value[separator=' '](name,location)" 2>/dev/null); do
+    echo "$1 $cluster" | awk '{print $1 " " $3 " " $2}'
+  done
+}
+
+private_cluster_creds() {
+  gcloud container clusters --project=$1 --location=$2 get-credentials --internal-ip $3 || return 1
+}
+
+private_cluster_creds() {
+  gcloud container clusters --project=$1 --location=$2 get-credentials $3 || return 1
+}
+
+clusters_for_project v3-skunk | while read project location cluster; do
+  if ! [[ -z $DEBUG ]]; then
+    info "project:  $project"
+    info "location: $location"
+    info "cluster:  $cluster"
+  fi
+  (private_cluster_creds $project $location $cluster && success "Found private ip for control plane.") ||
+    (public_cluster_creds $project $location $cluster && warn "Found public ip for control plane.") ||
+    error "Could not find control plane ip for $cluster in $project / $location."
+done
