@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Color stuff
 end="\033[0m"
 red="\033[0;31m"
