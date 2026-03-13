@@ -28,7 +28,7 @@ bindkey '\e[A' history-search-backward # up
 bindkey '\e[B' history-search-forward  # down
 
 # NO BEEP
-setopt NO_BEEP 
+setopt NO_BEEP
 
 # Set up the prompt
 setopt PROMPT_SUBST

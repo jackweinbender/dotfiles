@@ -18,7 +18,7 @@ cat <<EOM >"$HOME/.zshrc"
 #! /bin/zsh
 
 # ---
-# ZSHRC file for $USER@$(hostname) 
+# ZSHRC file for $USER@$(hostname)
 # Generated on: $(date +%F)
 # ---
 
@@ -36,13 +36,24 @@ EOM
 
 # Pull in the shared .zshrc file
 cat <<EOM >>~/.zshrc
-# include the base .zshrc file from this repo as well as
-# all of the helper files in the \`zsh/lib\` dir
-
+# include all the visible \`*.zsh\` files in the zsh/lib directory
 EOM
 
-for file in $DOTFILES/zsh/lib/**/*.zsh; do
+for file in $DOTFILES/zsh/lib/*.zsh; do
+  info "Adding $file to ~/.zshrc"
   echo "source $file" >>~/.zshrc
 done
+
+if [ -f "$DOTFILES/zsh/lib/.local.zsh" ]; then
+  info "Adding lib/.local.zsh .zshrc file to ~/.zshrc"
+  echo "" >>~/.zshrc
+  echo "# Local machine-specific configuration and overrides" >>~/.zshrc
+  echo "source $DOTFILES/zsh/lib/.local.zsh" >>~/.zshrc
+fi
+
+cat <<EOM >>~/.zshrc
+
+# END of generated .zshrc file
+EOM
 
 success "Done."
