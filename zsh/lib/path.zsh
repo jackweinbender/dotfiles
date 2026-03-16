@@ -1,3 +1,6 @@
+# Add local bin directory to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # Add custom bin directory to PATH
 export PATH="$DOTFILES/bin:$PATH"
 
