@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(memory:*)",
+      "Bash(workspace:*)",
+      "Read(~/Code/*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

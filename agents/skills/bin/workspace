@@ -1,0 +1,494 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require "fileutils"
+require "date"
+require "pathname"
+require "shellwords"
+
+module Workspace
+
+  WORKSPACES_DIR = File.expand_path("~/Code/workspaces")
+  TEMPLATE_DIR   = File.expand_path("../../templates/workspace", __dir__)
+  MEMORY_LOG_DIR = File.expand_path("~/Code/memory/log")
+  NAME_PATTERN   = /\A[A-Za-z0-9._-]+\z/
+  STUB_SUMMARY   = "_Filled in when the workspace is completed._"
+
+  class Error < StandardError
+    def kind = "error"
+  end
+
+  class UsageError       < Error; def kind = "invalid_argument"; end
+  class NotFoundError    < Error; def kind = "not_found";        end
+  class DuplicateError   < Error; def kind = "duplicate";         end
+  class DirtyWorktreeError < Error; def kind = "dirty_worktree"; end
+  class EmptySummaryError  < Error; def kind = "empty_summary";  end
+
+  # Inspects a single git worktree path. All accessors shell out to git; values
+  # are reasonably cheap to recompute, so no memoization.
+  class Worktree
+    attr_reader :path, :workspace
+
+    def initialize(path, workspace)
+      @path = path
+      @workspace = workspace
+    end
+
+    # e.g. "acme/widgets"
+    def slug
+      Pathname.new(path).relative_path_from(Pathname.new(workspace.worktrees_dir)).to_s
+    end
+
+    def branch
+      out = git("rev-parse", "--abbrev-ref", "HEAD")
+      out.empty? ? nil : out
+    end
+
+    def upstream
+      out = git("rev-parse", "--abbrev-ref", "HEAD@{upstream}")
+      out.empty? ? nil : out
+    end
+
+    # Returns [ahead, behind] vs. upstream, or [0, 0] if no upstream.
+    def ahead_behind
+      ref = upstream
+      return [0, 0] unless ref
+      out = git("rev-list", "--left-right", "--count", "HEAD...#{ref}")
+      return [0, 0] if out.empty?
+      a, b = out.split(/\s+/).map(&:to_i)
+      [a || 0, b || 0]
+    end
+
+    def dirty?
+      out = git("status", "--porcelain")
+      !out.empty?
+    end
+
+    def last_commit
+      out = git("log", "-1", "--pretty=format:%h %s")
+      out.empty? ? nil : out
+    end
+
+    private
+
+    def git(*args)
+      out = IO.popen(["git", "-C", path, *args], err: File::NULL, &:read).to_s
+      out.strip
+    end
+  end
+
+  class Entry
+    attr_reader :name
+
+    def initialize(name)
+      raise UsageError, "Invalid workspace name: #{name.inspect}" unless name.is_a?(String) && name.match?(NAME_PATTERN)
+      @name = name
+    end
+
+    def path              = File.join(WORKSPACES_DIR, name)
+    def workspace_md_path = File.join(path, "WORKSPACE.md")
+    def worktrees_dir     = File.join(path, ".worktrees")
+    def exist?            = File.exist?(path)
+
+    def worktrees
+      return [] unless Dir.exist?(worktrees_dir)
+      Dir.glob(File.join(worktrees_dir, "*", "*"))
+        .select { |p| File.directory?(p) }
+        .sort
+        .map { |p| Worktree.new(p, self) }
+    end
+
+    # :missing | :empty | :stub | :populated
+    def workspace_md_state
+      return :missing unless File.exist?(workspace_md_path)
+      body = summary_body
+      return :empty if body.nil? || body.empty?
+      return :stub  if body == STUB_SUMMARY
+      :populated
+    end
+
+    # Extract the content of the `## Summary` section (between the heading and
+    # the next `## ` heading or EOF), stripped.
+    def summary_body
+      return nil unless File.exist?(workspace_md_path)
+      lines = File.readlines(workspace_md_path)
+      start_idx = lines.index { |l| l.match?(/\A##\s+Summary\s*$/i) }
+      return nil unless start_idx
+      body_lines = []
+      lines.drop(start_idx + 1).each do |line|
+        break if line.match?(/\A##\s+/)
+        body_lines << line
+      end
+      body_lines.join.strip
+    end
+
+    class << self
+      def create(name)
+        raise NotFoundError, "Template not found at #{TEMPLATE_DIR}" unless Dir.exist?(TEMPLATE_DIR)
+        entry = new(name)
+        raise DuplicateError, "Workspace '#{name}' already exists at #{entry.path}" if entry.exist?
+        FileUtils.cp_r(TEMPLATE_DIR, entry.path)
+        entry
+      end
+
+      def all
+        return [] unless Dir.exist?(WORKSPACES_DIR)
+        Dir.children(WORKSPACES_DIR)
+          .reject { |n| n.start_with?(".") }
+          .select { |n| n.match?(NAME_PATTERN) && File.directory?(File.join(WORKSPACES_DIR, n)) }
+          .sort
+          .map { |n| new(n) }
+      end
+    end
+  end
+
+  module Tmux
+    module_function
+
+    def window_exists?(name)
+      out = IO.popen(["tmux", "list-windows", "-F", '#{window_name}'], err: File::NULL, &:read).to_s
+      return false unless $?.success?
+      out.split("\n").include?(name)
+    end
+
+    def open(name, cwd)
+      if window_exists?(name)
+        system("tmux", "select-window", "-t", name)
+      else
+        system("tmux", "new-window", "-n", name, "-c", cwd, "claude")
+      end
+    end
+
+    def kill(name)
+      system("tmux", "kill-window", "-t", name, out: File::NULL, err: File::NULL)
+    end
+  end
+
+  class Destroyer
+    attr_reader :entry
+
+    def initialize(entry)
+      @entry = entry
+    end
+
+    def plan
+      preflight
+      {
+        worktrees: entry.worktrees.map { |wt| { slug: wt.slug, branch: wt.branch, dirty: wt.dirty? } },
+        workspace_path: entry.path,
+        tmux_window: entry.name,
+      }
+    end
+
+    def run
+      preflight
+      preserved = entry.worktrees.map { |wt| { slug: wt.slug, branch: wt.branch } }
+      remove_worktrees_force
+      FileUtils.rm_rf(entry.path)
+      Tmux.kill(entry.name)
+      { preserved: preserved }
+    end
+
+    private
+
+    def preflight
+      raise NotFoundError, "Workspace '#{entry.name}' not found at #{entry.path}" unless entry.exist?
+    end
+
+    def remove_worktrees_force
+      entry.worktrees.each do |wt|
+        ok = system("git", "-C", wt.path, "worktree", "remove", "--force", wt.path)
+        raise Error, "git worktree remove --force failed for #{wt.slug}" unless ok
+      end
+    end
+  end
+
+  class Completer
+    attr_reader :entry, :date, :log_dest
+
+    def initialize(entry, date: Date.today)
+      @entry = entry
+      @date  = date
+      @log_dest = File.join(MEMORY_LOG_DIR, "#{date.iso8601}-#{entry.name}.md")
+    end
+
+    def plan
+      preflight
+      {
+        worktrees: snapshot_worktrees,
+        log_dest: log_dest,
+        workspace_path: entry.path,
+        tmux_window: entry.name,
+      }
+    end
+
+    def run
+      preflight
+      preserved = snapshot_worktrees
+      remove_worktrees
+      move_workspace_md
+      remove_workspace
+      Tmux.kill(entry.name)
+      { log_dest: log_dest, preserved: preserved }
+    end
+
+    private
+
+    def snapshot_worktrees
+      entry.worktrees.map { |wt| { slug: wt.slug, branch: wt.branch, upstream: wt.upstream } }
+    end
+
+    def preflight
+      raise NotFoundError, "Workspace '#{entry.name}' not found at #{entry.path}" unless entry.exist?
+
+      case entry.workspace_md_state
+      when :missing
+        raise UsageError, "Workspace has no WORKSPACE.md at #{entry.workspace_md_path}"
+      when :empty, :stub
+        raise EmptySummaryError, "WORKSPACE.md `## Summary` is #{entry.workspace_md_state}; fill it in before completing"
+      end
+
+      raise DuplicateError, "Log already exists at #{log_dest}" if File.exist?(log_dest)
+
+      dirty = entry.worktrees.select(&:dirty?)
+      return if dirty.empty?
+      raise DirtyWorktreeError, "Uncommitted changes in worktree(s): #{dirty.map(&:slug).join(", ")}"
+    end
+
+    def remove_worktrees
+      entry.worktrees.each do |wt|
+        ok = system("git", "-C", wt.path, "worktree", "remove", wt.path)
+        raise Error, "git worktree remove failed for #{wt.slug}" unless ok
+      end
+    end
+
+    def move_workspace_md
+      FileUtils.mkdir_p(MEMORY_LOG_DIR)
+      FileUtils.mv(entry.workspace_md_path, log_dest)
+    end
+
+    def remove_workspace
+      FileUtils.rm_rf(entry.path)
+    end
+  end
+end
+
+
+class Application
+  def create(name:, open: false)
+    entry = Workspace::Entry.create(name)
+    puts "Created workspace: #{entry.path}"
+    open(name: name) if open
+  end
+
+  def open(name:)
+    entry = Workspace::Entry.new(name)
+    raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
+    ok = Workspace::Tmux.open(name, entry.path)
+    raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
+  end
+
+  def status(name:)
+    entry = Workspace::Entry.new(name)
+    raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
+
+    puts "Workspace: #{entry.name}"
+    puts "  Path:      #{entry.path}"
+    puts "  WORKSPACE.md:  #{entry.workspace_md_state}"
+    puts "  Worktrees:"
+    wts = entry.worktrees
+    if wts.empty?
+      puts "    (none)"
+      return
+    end
+    wts.each do |wt|
+      ahead, behind = wt.ahead_behind
+      flags = []
+      flags << "dirty" if wt.dirty?
+      flags << "+#{ahead}/-#{behind}" if (ahead + behind) > 0
+      flags << "no upstream" if wt.upstream.nil?
+      flag_s = flags.empty? ? "clean" : flags.join(", ")
+      puts "    #{wt.slug}"
+      puts "      branch:    #{wt.branch || "—"}"
+      puts "      upstream:  #{wt.upstream || "—"}"
+      puts "      state:     #{flag_s}"
+      puts "      last:      #{wt.last_commit || "—"}"
+    end
+  end
+
+  def list
+    entries = Workspace::Entry.all
+    if entries.empty?
+      puts "No workspaces."
+      return
+    end
+    rows = entries.map do |e|
+      wts = e.worktrees
+      dirty = wts.count(&:dirty?)
+      ready =
+        if e.workspace_md_state != :populated
+          "no (doc #{e.workspace_md_state})"
+        elsif dirty > 0
+          "no (#{dirty} dirty)"
+        else
+          "yes"
+        end
+      [e.name, wts.size.to_s, e.workspace_md_state.to_s, ready]
+    end
+    headers = ["NAME", "WORKTREES", "WORKSPACE.md", "READY"]
+    widths = headers.each_with_index.map { |h, i| ([h, *rows.map { |r| r[i] }].map(&:length).max) }
+    fmt = widths.map { |w| "%-#{w}s" }.join("  ")
+    puts(fmt % headers)
+    rows.each { |r| puts(fmt % r) }
+  end
+
+  def destroy(name:, dry_run: false)
+    entry = Workspace::Entry.new(name)
+    destroyer = Workspace::Destroyer.new(entry)
+
+    if dry_run
+      plan = destroyer.plan
+      puts "Dry-run destroy for workspace '#{name}':"
+      puts "  Worktrees to force-remove:"
+      if plan[:worktrees].empty?
+        puts "    (none)"
+      else
+        plan[:worktrees].each do |wt|
+          dirty_s = wt[:dirty] ? " [DIRTY: uncommitted changes will be discarded]" : ""
+          puts "    #{wt[:slug]}  (branch: #{wt[:branch] || "—"})#{dirty_s}"
+        end
+      end
+      puts "  Will rm -rf:       #{plan[:workspace_path]}"
+      puts "  Will close tmux:   #{plan[:tmux_window]} (if exists)"
+      return
+    end
+
+    result = destroyer.run
+    puts "Destroyed workspace '#{name}'"
+    if result[:preserved].any?
+      puts "  Branches preserved (uncommitted changes discarded):"
+      result[:preserved].each do |wt|
+        puts "    #{wt[:slug]}: #{wt[:branch] || "—"}"
+      end
+    end
+  end
+
+  def complete(name:, dry_run: false)
+    entry = Workspace::Entry.new(name)
+    completer = Workspace::Completer.new(entry)
+
+    if dry_run
+      plan = completer.plan
+      puts "Dry-run for workspace '#{name}':"
+      puts "  Worktrees to remove:"
+      if plan[:worktrees].empty?
+        puts "    (none)"
+      else
+        plan[:worktrees].each do |wt|
+          puts "    #{wt[:slug]}  (branch: #{wt[:branch] || "—"}, upstream: #{wt[:upstream] || "—"})"
+        end
+      end
+      puts "  Archive destination: #{plan[:log_dest]}"
+      puts "  Will rm -rf:       #{plan[:workspace_path]}"
+      puts "  Will close tmux:   #{plan[:tmux_window]} (if exists)"
+      return
+    end
+
+    result = completer.run
+    puts "Completed workspace '#{name}'"
+    puts "  Archived: #{result[:log_dest]}"
+    if result[:preserved].any?
+      puts "  Branches preserved:"
+      result[:preserved].each do |wt|
+        upstream_s = wt[:upstream] ? "tracking #{wt[:upstream]}" : "local only"
+        puts "    #{wt[:slug]}: #{wt[:branch] || "—"} (#{upstream_s})"
+      end
+    end
+  end
+end
+
+
+parser = OptionParser.new do |opts|
+  opts.banner = <<~BANNER
+    Usage: workspace <command> [args]
+
+    Commands:
+      create   --name <name> [--open]     Create a new workspace from the template
+        (alias: new)
+      open     --name <name>              Open or switch to the workspace's tmux window
+      status   --name <name>              Show worktree and WORKSPACE.md state
+      list                                List workspaces with summary state
+      complete --name <name> [--dry-run]  Tear down a finished workspace
+      destroy  --name <name> [--dry-run]  Force-remove a workspace (skip doc/memory flow)
+
+  BANNER
+  opts.on("-h", "--help", "Show this help") { puts opts; exit 0 }
+end
+parser.order!(ARGV)
+
+if ARGV.empty?
+  puts parser
+  exit 0
+end
+
+cmd = ARGV.shift
+app = Application.new
+
+begin
+  case cmd
+  when "create", "new"
+    opts = { name: nil, open: false }
+    OptionParser.new do |o|
+      o.banner = "Usage: workspace #{cmd} --name <name> [--open]"
+      o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+      o.on("--open", "Open the workspace in tmux after creating") { opts[:open] = true }
+    end.parse!(ARGV)
+    raise Workspace::UsageError, "#{cmd} requires --name" if opts[:name].nil? || opts[:name].empty?
+    app.create(**opts)
+  when "open"
+    opts = { name: nil }
+    OptionParser.new do |o|
+      o.banner = "Usage: workspace open --name <name>"
+      o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+    end.parse!(ARGV)
+    raise Workspace::UsageError, "open requires --name" if opts[:name].nil? || opts[:name].empty?
+    app.open(**opts)
+  when "status"
+    opts = { name: nil }
+    OptionParser.new do |o|
+      o.banner = "Usage: workspace status --name <name>"
+      o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+    end.parse!(ARGV)
+    raise Workspace::UsageError, "status requires --name" if opts[:name].nil? || opts[:name].empty?
+    app.status(**opts)
+  when "list"
+    OptionParser.new { |o| o.banner = "Usage: workspace list" }.parse!(ARGV)
+    app.list
+  when "complete"
+    opts = { name: nil, dry_run: false }
+    OptionParser.new do |o|
+      o.banner = "Usage: workspace complete --name <name> [--dry-run]"
+      o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+      o.on("--dry-run", "Show what would happen without modifying anything") { opts[:dry_run] = true }
+    end.parse!(ARGV)
+    raise Workspace::UsageError, "complete requires --name" if opts[:name].nil? || opts[:name].empty?
+    app.complete(**opts)
+  when "destroy"
+    opts = { name: nil, dry_run: false }
+    OptionParser.new do |o|
+      o.banner = "Usage: workspace destroy --name <name> [--dry-run]"
+      o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+      o.on("--dry-run", "Show what would happen without modifying anything") { opts[:dry_run] = true }
+    end.parse!(ARGV)
+    raise Workspace::UsageError, "destroy requires --name" if opts[:name].nil? || opts[:name].empty?
+    app.destroy(**opts)
+  else
+    raise Workspace::UsageError, "Unknown command: #{cmd}. Run `workspace --help` for usage."
+  end
+
+  exit 0
+rescue => e
+  warn "[ERROR] #{e.message}"
+  exit 1
+end
