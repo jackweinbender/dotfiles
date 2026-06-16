@@ -18,3 +18,4 @@ fi
 source $HOME/.dotfiles/zsh/bootstrap.zsh
 source $HOME/.dotfiles/osx/brew-init.zsh
 source $HOME/.dotfiles/osx/brew.zsh
+source $HOME/.dotfiles/agents/bootstrap.zsh

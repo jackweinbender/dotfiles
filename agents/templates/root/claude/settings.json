@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(memory:*)",
+      "Bash(workspace:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

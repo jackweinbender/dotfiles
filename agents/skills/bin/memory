@@ -1,0 +1,320 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# memory — write/maintenance for the shared, tool-agnostic memory store.
+#
+# RECALL is deliberately NOT here: an agent with grep + read + INDEX.md already
+# does progressive disclosure better than any fixed scorer (see the skill). This
+# CLI owns only the *deterministic* half — the procedural work that's easy to
+# botch by hand:
+#
+#   add    scaffold a schema-correct note (frontmatter + today's date) and
+#          register it in INDEX.md
+#   index  reconcile INDEX.md with the notes on disk — add lines for new notes,
+#          drop orphans, re-sort. Preserves curated hook/title text.
+#   lint   validate frontmatter schema, INDEX sync, and wikilink resolution.
+#
+# Structure-agnostic: one CORPUS_DIR constant points at the recall corpus
+# (the knowledge notes). Episodic logs live in a sibling dir, out of scope here.
+
+require "optparse"
+require "yaml"
+require "date"
+
+module Memory
+  CORPUS_DIR  = File.expand_path("~/Code/memory/knowledge")
+  INDEX_PATH  = File.join(CORPUS_DIR, "INDEX.md")
+  INDEX_FILE  = "INDEX.md"
+  KNOWN_TYPES = %w[reference procedure convention pattern identity].freeze
+  SLUG_RE     = /\A[a-z0-9][a-z0-9-]*\z/
+  INDEX_LINE  = /\A- \[(?<title>.+)\]\((?<file>[^)]+\.md)\)(?: — (?<hook>.*))?\z/
+
+  INDEX_HEADER = <<~HEADER
+    # Memory index
+
+    One line per note — scan this, then Read the note(s) that match the task. Maintained by `memory index` (adds new notes, drops deleted ones, re-sorts); curate the hook text by editing the line. Every note in `memory/` (except this file) has exactly one line here.
+  HEADER
+
+  class Error < StandardError
+    def kind = "error"
+  end
+  class UsageError     < Error; def kind = "invalid_argument"; end
+  class DuplicateError < Error; def kind = "duplicate";        end
+  class LintError      < Error; def kind = "lint_failed";      end
+
+  # A single markdown note: frontmatter + body, with derived title/summary.
+  class Note
+    attr_reader :path, :raw
+
+    def initialize(path)
+      @path = path
+      @raw  = File.read(path)
+    end
+
+    def slug = File.basename(path, ".md")
+
+    def meta
+      @meta ||= begin
+        if raw =~ /\A---\s*\n(.*?)\n---\s*\n/m
+          YAML.safe_load($1, permitted_classes: [Date, Time]) || {}
+        else
+          {}
+        end
+      rescue Psych::Exception
+        {}
+      end
+    end
+
+    def body = @body ||= raw.sub(/\A---\s*\n.*?\n---\s*\n/m, "")
+    def type = meta["type"]&.to_s
+    def tags = Array(meta["tags"]).map(&:to_s)
+    def created = meta["created"]&.to_s
+    def summary = meta["summary"]&.to_s
+
+    def title = @title ||= (body[/^#\s+(.+)$/, 1]&.strip) || slug
+
+    # First line of real prose — a provisional hook for auto-added INDEX lines.
+    def first_prose
+      line = body.each_line.find do |l|
+        s = l.strip
+        !s.empty? && !s.start_with?("#", "---", "|", "- ", "* ")
+      end
+      (line || "").strip.gsub(/\s+/, " ")[0, 140].to_s
+    end
+
+    # [[wikilink]] targets referenced in the body.
+    def wikilinks = body.scan(/\[\[([^\]|#]+)/).flatten.map { |s| s.strip }
+  end
+
+  module Corpus
+    module_function
+
+    def notes
+      return [] unless Dir.exist?(CORPUS_DIR)
+      Dir.glob(File.join(CORPUS_DIR, "**", "*.md"))
+        .reject { |p| File.basename(p) == INDEX_FILE }
+        .sort
+        .map { |p| Note.new(p) }
+    end
+
+    def slugs = notes.map(&:slug)
+
+    # Parse INDEX.md into { slug => { title:, hook: } } from its bullet lines.
+    def index_entries
+      return {} unless File.exist?(INDEX_PATH)
+      File.readlines(INDEX_PATH).each_with_object({}) do |line, acc|
+        m = INDEX_LINE.match(line.rstrip)
+        next unless m
+        slug = File.basename(m[:file], ".md")
+        acc[slug] = { title: m[:title], hook: (m[:hook] || "").strip }
+      end
+    end
+
+    # Reconcile INDEX.md with notes on disk. `overrides` is { slug => {title:, hook:} }
+    # for freshly-added notes. Returns { added:, dropped:, written: }.
+    def reconcile(overrides: {}, write: true)
+      existing = index_entries
+      present  = notes.to_h { |n| [n.slug, n] }
+
+      added   = []
+      entries = present.keys.map do |slug|
+        note = present[slug]
+        entry =
+          overrides[slug] ||
+          existing[slug] ||
+          begin
+            added << slug
+            { title: note.title, hook: note.summary || note.first_prose }
+          end
+        { slug: slug, title: entry[:title], hook: entry[:hook].to_s }
+      end
+      # Sort by display title (case-insensitive) to match the curated convention.
+      lines = entries.sort_by { |e| e[:title].downcase }.map do |e|
+        hook = e[:hook].empty? ? "" : " — #{e[:hook]}"
+        "- [#{e[:title]}](#{e[:slug]}.md)#{hook}"
+      end
+      dropped = existing.keys - present.keys
+
+      if write
+        File.write(INDEX_PATH, "#{INDEX_HEADER}\n#{lines.join("\n")}\n")
+      end
+      { added: added, dropped: dropped, lines: lines }
+    end
+  end
+
+  # add: scaffold a schema-correct note and register it in INDEX.
+  class Adder
+    def initialize(slug:, type:, tags:, title:, summary:, body: nil)
+      @slug = slug
+      @type = type
+      @tags = tags
+      @title = title
+      @summary = summary
+      @body = body
+      validate!
+    end
+
+    def path = File.join(CORPUS_DIR, "#{@slug}.md")
+
+    def run
+      raise DuplicateError, "Note already exists: #{path} (use Edit to modify)" if File.exist?(path)
+      File.write(path, content)
+      Corpus.reconcile(overrides: { @slug => { title: @title, hook: @summary } })
+      path
+    end
+
+    private
+
+    def validate!
+      raise UsageError, "slug must match #{SLUG_RE.inspect}: #{@slug.inspect}" unless @slug&.match?(SLUG_RE)
+      raise UsageError, "title is required" if @title.to_s.strip.empty?
+      raise UsageError, "summary is required (the INDEX hook)" if @summary.to_s.strip.empty?
+      raise UsageError, "at least one tag is required" if @tags.empty?
+      warn "[warn] unknown type #{@type.inspect}; known: #{KNOWN_TYPES.join(", ")}" unless KNOWN_TYPES.include?(@type)
+    end
+
+    def content
+      <<~NOTE
+        ---
+        type: #{@type}
+        tags: [#{@tags.join(", ")}]
+        created: #{Date.today.iso8601}
+        ---
+
+        # #{@title}
+
+        #{@body || "<!-- write the note body here, then commit in memory/ -->"}
+      NOTE
+    end
+  end
+
+  # lint: validate the corpus.
+  class Linter
+    def run
+      errors = []
+      warnings = []
+      present = Corpus.slugs
+      indexed = Corpus.index_entries
+
+      Corpus.notes.each do |n|
+        loc = "#{n.slug}.md"
+        errors   << "#{loc}: missing `type`"    if n.type.to_s.empty?
+        errors   << "#{loc}: missing `tags`"    if n.tags.empty?
+        errors   << "#{loc}: missing `created`" if n.created.to_s.empty?
+        errors   << "#{loc}: missing H1 title"  if n.body[/^#\s+.+$/].nil?
+        errors   << "#{loc}: not in INDEX.md"   unless indexed.key?(n.slug)
+        warnings << "#{loc}: unknown type #{n.type.inspect}" if n.type && !KNOWN_TYPES.include?(n.type)
+        begin
+          Date.iso8601(n.created) if n.created
+        rescue ArgumentError
+          errors << "#{loc}: `created` is not an ISO date: #{n.created.inspect}"
+        end
+        n.wikilinks.each do |w|
+          warnings << "#{loc}: dangling [[#{w}]]" unless present.include?(w)
+        end
+      end
+
+      (indexed.keys - present).each { |slug| errors << "INDEX.md: orphan entry for missing note #{slug}.md" }
+
+      warnings.each { |w| warn "[warn] #{w}" }
+      unless errors.empty?
+        errors.each { |e| warn "[error] #{e}" }
+        raise LintError, "#{errors.size} error(s), #{warnings.size} warning(s)"
+      end
+      [present.size, warnings.size]
+    end
+  end
+end
+
+class Application
+  def add(**opts)
+    path = Memory::Adder.new(**opts).run
+    puts "Created #{path}"
+    puts "Registered in #{Memory::INDEX_PATH}"
+    puts "Next: fill in the body, then commit in memory/."
+  end
+
+  def index(check: false)
+    result = Memory::Corpus.reconcile(write: !check)
+    if check
+      drift = result[:added] + result[:dropped]
+      if drift.empty?
+        puts "INDEX.md is in sync (#{result[:lines].size} notes)."
+      else
+        warn "[error] INDEX.md drift: #{result[:added].size} missing, #{result[:dropped].size} orphaned"
+        result[:added].each   { |s| warn "  + #{s} (not in INDEX)" }
+        result[:dropped].each { |s| warn "  - #{s} (in INDEX, no note)" }
+        raise Memory::LintError, "INDEX.md out of sync; run `memory index` to fix"
+      end
+    else
+      puts "Reconciled INDEX.md (#{result[:lines].size} notes)."
+      result[:added].each   { |s| puts "  + added #{s} (curate its hook)" }
+      result[:dropped].each { |s| puts "  - dropped #{s}" }
+    end
+  end
+
+  def lint
+    count, warns = Memory::Linter.new.run
+    puts "OK: #{count} notes valid#{warns.positive? ? " (#{warns} warning(s))" : ""}."
+  end
+end
+
+parser = OptionParser.new do |opts|
+  opts.banner = <<~BANNER
+    Usage: memory <command> [args]
+
+    Write/maintenance for the memory store at #{Memory::CORPUS_DIR}.
+    (Recall is not here — use INDEX.md + rg + Read; see the `memory` skill.)
+
+    Commands:
+      add --slug S --type T --tags a,b --title "..." --summary "..."   Scaffold a note + register it
+      index [--check]                                                  Reconcile INDEX.md with notes on disk
+      lint                                                             Validate schema, INDEX sync, wikilinks
+  BANNER
+  opts.on("-h", "--help", "Show this help") { puts opts; exit 0 }
+end
+parser.order!(ARGV)
+
+if ARGV.empty?
+  puts parser
+  exit 0
+end
+
+cmd = ARGV.shift
+app = Application.new
+
+begin
+  case cmd
+  when "add"
+    opts = { tags: [] }
+    OptionParser.new do |o|
+      o.banner = "Usage: memory add --slug S --type T --tags a,b --title \"...\" --summary \"...\""
+      o.on("--slug=SLUG")        { |v| opts[:slug] = v }
+      o.on("--type=TYPE")        { |v| opts[:type] = v }
+      o.on("--tags=A,B", Array)  { |v| opts[:tags] = v.map(&:strip) }
+      o.on("--title=TITLE")      { |v| opts[:title] = v }
+      o.on("--summary=SUMMARY")  { |v| opts[:summary] = v }
+      o.on("--body=BODY")        { |v| opts[:body] = v }
+    end.parse!(ARGV)
+    app.add(**opts)
+  when "index"
+    opts = { check: false }
+    OptionParser.new do |o|
+      o.banner = "Usage: memory index [--check]"
+      o.on("--check", "Report drift without writing (exit 1 if out of sync)") { opts[:check] = true }
+    end.parse!(ARGV)
+    app.index(**opts)
+  when "lint"
+    OptionParser.new { |o| o.banner = "Usage: memory lint" }.parse!(ARGV)
+    app.lint
+  else
+    raise Memory::UsageError, "Unknown command: #{cmd}. Run `memory --help` for usage."
+  end
+  exit 0
+rescue Memory::Error => e
+  warn "[#{e.kind}] #{e.message}"
+  exit 1
+rescue OptionParser::ParseError => e
+  warn "[invalid_argument] #{e.message}"
+  exit 1
+end
