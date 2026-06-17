@@ -20,6 +20,6 @@ agents/
 - **`skills/` — live.** A capability is a recipe (`SKILL.md`) + its primitive (a CLI in `bin/`). `bootstrap.zsh` **symlinks** each `skills/<name>/` into `~/Code/.claude/skills/`, and `skills/bin/` is on `PATH`. Edit a skill and it's live immediately — change control comes from git-tracking it here. Per-skill `recipes/` scripts can sit alongside a `SKILL.md` later.
 - **`templates/` — copied.** `root/` is **compiled** into `~/Code` by `bootstrap.zsh` (build artifacts — edit the source, recompile; don't edit the `~/Code` copies). `workspace/` is **stamped** into each new `~/Code/workspaces/<name>/` by `workspace create`, read straight from here.
 
-**Setup:** chained from `osx/bootstrap.zsh`, or run `zsh ~/.dotfiles/agents/bootstrap.zsh`. Idempotent.
+**Setup:** chained from `osx/bootstrap.zsh`, or run `zsh ~/.dotfiles/agents/bootstrap.zsh`. Idempotent. After editing anything here, run `agents_init` (defined in `zsh/lib/_.zsh`) to recompile `~/Code` config and relink skills.
 
 **Not managed here (private / separate):** the `~/Code/memory/` store (its own repo) and the `~/Code/github.com/` clones.
