@@ -7,7 +7,7 @@ description: Operations on workspaces under ~/Code/workspaces/ — create, open,
 
 Workspaces are isolated working directories under `~/Code/workspaces/<name>/`, each with its own `AGENTS.md`, `WORKSPACE.md`, and `.worktrees/`. See `~/Code/AGENTS.md` for the broader convention.
 
-**Worktree layout.** Git worktrees live at `~/Code/workspaces/<name>/.worktrees/<org>/<repo>-<branchname>/`. The branch name is the literal branch (not the string `"branch"`), so multiple branches of the same repo can coexist in one workspace. When adding a worktree, follow this convention — e.g. `acme/api-add-healthcheck/` for the `add-healthcheck` branch of `acme/api`.
+**Worktree layout.** Git worktrees live at `~/Code/workspaces/<name>/.worktrees/<org>/<repo>-<branchslug>/`. The `<branchslug>` is the branch name with any `/` replaced by `-` (the branch keeps its real name — only the directory is flattened), so multiple branches of the same repo can coexist in one workspace and a slashed branch like `feat/x` doesn't nest a subdirectory and break worktree enumeration. When adding a worktree, follow this convention — e.g. `acme/api-add-healthcheck/` for the `add-healthcheck` branch of `acme/api`, or `acme/api-feat-x/` for `feat/x`.
 
 All workspace lifecycle operations go through the `workspace` CLI (on your `PATH`). **Whenever a step can be done procedurally, prefer the CLI over ad-hoc shell.**
 
