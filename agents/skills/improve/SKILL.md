@@ -99,6 +99,7 @@ Present **direction findings separately**, after the table — 2–4 grounded op
 Write each selected finding as `plans/NNN-slug.md` using the shared template at `~/Code/.claude/skills/plan/references/plan-template.md` — read it before the first plan. Before writing: record `git -C <repo> rev-parse --short HEAD` (every plan stamps it under `Planned at`).
 
 - **Excerpts come from your own reads, never a subagent's report.** Open every cited file yourself first.
+- **Set the test plan's TDD seam honestly.** Mark `TDD: yes` for logic/bug findings and enumerate the **behaviors to test** as specifications through the public interface (the gate the executor consumes); `TDD: no` with a reason for config/docs/refactor/infra. The discipline is the `tdd` skill; the test-quality bar is `~/Code/memory/knowledge/testing-discipline.md`.
 - **Serialize scope overlaps:** if two plans share an in-scope file, one must `Depend on` the other (so `execute`'s merge-gate enforces one rule).
 - If a `plans/` dir already exists, **reconcile, don't duplicate**: keep numbering monotonic, skip findings already planned or rejected, mark superseded plans stale.
 

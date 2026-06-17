@@ -27,6 +27,11 @@ your recommended answer and a one-line why.
   the remaining choices are immaterial or clearly the user's call with an obvious
   default, say so and stop.
 
+When the plan involves behavior change, one axis worth grilling is **which
+behaviors actually matter to test** — you can't test everything, so pin the
+critical paths now. That answer becomes the plan's TDD seam (see the `tdd`
+skill).
+
 ## When to use it
 
 Reach for `grillme` to stress-test a plan or design *before* committing to
