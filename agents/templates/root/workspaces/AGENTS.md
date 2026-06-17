@@ -4,7 +4,7 @@ Conventions for work happening inside any workspace under `~/Code/workspaces/<na
 
 ## Edit in worktrees
 
-All edits happen inside `.worktrees/<org>/<repo>-<branchname>/` (literal branch name in the path, so multiple branches of one repo can coexist). Never edit the clone under `~/Code/github.com/<org>/<repo>/`.
+All edits happen inside `.worktrees/<org>/<repo>-<branchslug>/` (the branch name with `/` replaced by `-`, so multiple branches of one repo can coexist and a slashed branch like `feat/x` doesn't nest a subdirectory). Never edit the clone under `~/Code/github.com/<org>/<repo>/`.
 
 ## Keep WORKSPACE.md current
 
