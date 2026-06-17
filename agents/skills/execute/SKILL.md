@@ -60,11 +60,19 @@ Spawn **one** subagent (`general-purpose`, the chosen model, no `isolation` — 
 > worktree root. If any STOP condition occurs, stop immediately and report. Do
 > not improvise around obstacles. Commit your work in the worktree following
 > the plan's git workflow — do NOT push, open a PR, or merge. One override:
-> SKIP updating any plan status — your reviewer maintains it. Before reporting,
-> audit every claim against an actual tool result from this session; report
-> only what you can point to evidence for, and if a verification failed or was
-> skipped, say so plainly. When finished, reply with exactly the report format
-> below.
+> SKIP updating any plan status — your reviewer maintains it.
+>
+> Cadence: typecheck and run the relevant single test file frequently as you
+> go (not just at the end); run the full suite once before reporting. If the
+> plan's `## Test plan` marks `TDD: yes`, build those behaviors test-first —
+> red→green→refactor, one behavior at a time (one failing test → minimal code
+> to pass → repeat; never refactor while red); invoke the `tdd` skill if
+> available and write tests that assert observable behavior, not internal shape.
+>
+> Before reporting, audit every claim against an actual tool result from this
+> session; report only what you can point to evidence for, and if a
+> verification failed or was skipped, say so plainly. When finished, reply with
+> exactly the report format below.
 
 4. The report format:
 
@@ -78,12 +86,17 @@ NOTES: anything the reviewer should know (deviations, surprises, judgment calls)
 
 ## Review (the real job)
 
-Review like a tech lead reviewing a PR against the spec — never fix anything yourself:
+Review the finished diff like a tech lead reviewing a PR — never fix anything yourself. The review runs on **two independent axes, always fanned out to two parallel read-only sub-agents**:
 
-1. **Re-run every done criterion** in the worktree. Don't trust the executor's report — verify.
-2. **Scope compliance:** `git -C <worktree> diff --stat` against the plan's in-scope list. Any file outside scope fails review, full stop. (This is how the by-instruction worktree scoping is actually enforced.)
-3. **Read the full diff.** Judge it against "Why this matters" (does it solve the real problem?) and the repo conventions the plan named (does it look like the rest of the codebase?).
-4. **Audit the new tests.** Executors game criteria — a test that asserts nothing passes `test` and proves nothing. Read what the tests assert.
+- **Spec** — did it build the *right thing*? (done criteria met, solves "Why this matters", in scope, no creep) — judged against the plan only.
+- **Standards** — did it build the thing *right*? (repo conventions, code health, test quality vs `~/Code/memory/knowledge/testing-discipline.md`).
+
+Dispatch both (`Explore` or `general-purpose`, no `isolation`, read-only) with the worktree path, the full plan text inlined, and the executor's report. The exact prompts are in [references/review-axes.md](references/review-axes.md) — read it. Then **aggregate, don't merge**: report findings under separate **Spec** and **Standards** headings. The separation is the point — a diff can follow every convention while building the wrong thing (fails Spec, clean Standards), or nail the requirement while being sloppy and untested (fails Standards, clean Spec). Bundling lets one clean axis mask the other's failure.
+
+You still **own the two gates** — corroborate the sub-agents, don't fully delegate:
+
+- **Re-run every done criterion** in the worktree yourself. Don't trust the executor's *or* a reviewer's report — verify.
+- **Scope compliance:** `git -C <worktree> diff --stat` against the plan's in-scope list. Any file outside scope fails review, full stop. (This is how by-instruction worktree scoping is actually enforced.)
 
 Installing deps or running one build in the fresh worktree is expected, not a deviation.
 
@@ -91,9 +104,11 @@ Installing deps or running one build in the fresh worktree is expected, not a de
 
 **Documented deviations are judged on merit, not reflex-blocked.** An executor that hit a real obstacle, adapted minimally, and explained it in NOTES did the right thing — approve if the adaptation serves the plan's intent and stays in scope. Treat *undocumented* deviations as failures.
 
+**APPROVE requires both axes clean.** A Spec failure with clean Standards still blocks (right code, wrong feature), and a Standards failure with clean Spec still blocks (right feature, unmaintainable or untested). When you report, state the worst issue on each axis separately — don't rank one axis against the other.
+
 | Verdict | When | Action |
 |---|---|---|
-| **APPROVE** | Criteria pass, scope clean, quality holds | Set the plan's `## Status` `State` → `DONE`. Present to the user: diff summary, worktree path + branch, anything from NOTES. Remind them that **merging is theirs** — and that any dependent plan stays gated until they merge this and pull. |
+| **APPROVE** | Both axes clean: done criteria pass, scope clean, Spec satisfied, Standards holds | Set the plan's `## Status` `State` → `DONE`. Present to the user: diff summary, worktree path + branch, anything from NOTES. Remind them that **merging is theirs** — and that any dependent plan stays gated until they merge this and pull. |
 | **REVISE** | Fixable gaps | SendMessage the same executor with specific, actionable feedback ("done-criterion 3 fails: X; the handler at `api.ts:90` swallows the error — use the Result pattern per the plan"). **Max 2 rounds**, then BLOCK. |
 | **BLOCK** | STOP condition hit, scope violated unrecoverably, or revisions exhausted | Set `State` → `BLOCKED` with the reason. Hand the plan back to `plan`/`improve` to refine with what was learned. Tell the user what happened. |
 

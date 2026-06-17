@@ -73,6 +73,7 @@ For each unit of work, write `plans/NNN-slug.md` from the template. Before writi
 - If the task naturally decomposes, write multiple numbered plans and set their `Depends on` edges to reflect execution order.
 - **Serialize scope overlaps:** if two plans list any of the same file in `In scope`, one must `Depend on` the other — they cannot be executed independently (the second would drift once the first lands). This is what lets `execute` enforce a single rule.
 - Keep each plan to the weakest-plausible-executor bar: all context inlined (absolute paths, current-state excerpts, conventions + exemplar), ordered steps each with a verification command and expected output, explicit in/out-of-scope lists, machine-checkable done criteria, a test plan, STOP conditions, and maintenance notes.
+- **Set the test plan's TDD seam honestly.** For logic-bearing or bug-fix work, mark `TDD: yes` and enumerate the **behaviors to test** as specifications through the public interface (the planning gate the executor consumes — it won't re-derive them). For config/docs/pure-refactor/infra plans, mark `TDD: no` with a one-line reason. The discipline is the `tdd` skill; the test-quality bar is `~/Code/memory/knowledge/testing-discipline.md`.
 
 ### Phase 4 — Record the plan set and hand off
 

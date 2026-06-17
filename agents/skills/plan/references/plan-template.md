@@ -140,10 +140,20 @@ remove old path.)
 
 ## Test plan
 
-- New tests to write, in which file, covering which cases (happy path, the
-  specific bug/regression this plan fixes, named edge cases).
+- **TDD**: yes (seams: <which behaviors/modules to drive test-first>) | no (why:
+  <e.g. config-only, pure refactor, infra — no new behavior to specify>).
+  Opt-in: logic-bearing and bug-fix plans usually say yes; set it honestly.
+- **Behaviors to test** (when TDD: yes — this is the resolved planning gate the
+  executor consumes, so be specific). List each as a specification through the
+  **public interface**, prioritized, not a per-function checklist:
+  - "rejects a checkout with an expired token" — happy path + the specific
+    bug/regression this plan fixes + named edge cases.
+  Drive them red→green→refactor, one at a time (see the `tdd` skill). Tests must
+  assert observable behavior, not internal shape — see
+  `~/Code/memory/knowledge/testing-discipline.md`.
 - Which existing test to use as the structural pattern: "model after
   `src/users/api.test.ts`".
+- File(s) the new tests live in.
 - Verification: `<test command>` → all pass, including N new tests.
 
 ## Done criteria
