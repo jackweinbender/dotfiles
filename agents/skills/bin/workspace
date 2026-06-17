@@ -152,11 +152,11 @@ module Workspace
       out.split("\n").include?(name)
     end
 
-    def open(name, cwd)
+    def open(name, cwd, editor)
       if window_exists?(name)
         system("tmux", "select-window", "-t", name)
       else
-        system("tmux", "new-window", "-n", name, "-c", cwd, "claude")
+        system("tmux", "new-window", "-n", name, "-c", cwd, editor)
       end
     end
 
@@ -276,16 +276,16 @@ end
 
 
 class Application
-  def create(name:, open: false)
+  def create(name:, open: false, editor: nil)
     entry = Workspace::Entry.create(name)
     puts "Created workspace: #{entry.path}"
-    open(name: name) if open
+    open(name: name, editor: editor) if open
   end
 
-  def open(name:)
+  def open(name:, editor:)
     entry = Workspace::Entry.new(name)
     raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
-    ok = Workspace::Tmux.open(name, entry.path)
+    ok = Workspace::Tmux.open(name, entry.path, editor)
     raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
   end
 
@@ -438,21 +438,25 @@ app = Application.new
 begin
   case cmd
   when "create", "new"
-    opts = { name: nil, open: false }
+    opts = { name: nil, open: false, editor: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace #{cmd} --name <name> [--open]"
+      o.banner = "Usage: workspace #{cmd} --name <name> [--open --editor <cmd>]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
       o.on("--open", "Open the workspace in tmux after creating") { opts[:open] = true }
+      o.on("--editor=CMD", "Editor command to launch in tmux (required with --open)") { |v| opts[:editor] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "#{cmd} requires --name" if opts[:name].nil? || opts[:name].empty?
+    raise Workspace::UsageError, "#{cmd} requires --editor when --open is set" if opts[:open] && (opts[:editor].nil? || opts[:editor].empty?)
     app.create(**opts)
   when "open"
-    opts = { name: nil }
+    opts = { name: nil, editor: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace open --name <name>"
+      o.banner = "Usage: workspace open --name <name> --editor <cmd>"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
+      o.on("--editor=CMD", "Editor command to launch in tmux") { |v| opts[:editor] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "open requires --name" if opts[:name].nil? || opts[:name].empty?
+    raise Workspace::UsageError, "open requires --editor" if opts[:editor].nil? || opts[:editor].empty?
     app.open(**opts)
   when "status"
     opts = { name: nil }
