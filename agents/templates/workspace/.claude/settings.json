@@ -10,5 +10,11 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "claudeMdExcludes": [
+    "**/Code/CLAUDE.md",
+    "**/Code/AGENTS.md",
+    "**/Code/workspaces/CLAUDE.md",
+    "**/Code/workspaces/AGENTS.md"
+  ]
 }
