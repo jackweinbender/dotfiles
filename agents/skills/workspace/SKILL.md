@@ -36,24 +36,24 @@ The `workspace` CLI is on `PATH` and permitted via `Bash(workspace:*)` in `~/Cod
 
 ### Commands
 
-#### `create --name <name> [--open]` (alias: `new`)
+#### `create --name <name> [--open --editor <cmd>]` (alias: `new`)
 
-Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running Claude in the new workspace.
+Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the given editor in the new workspace. `--editor` is required when `--open` is set.
 
 ```bash
-workspace create --name <name> --open
+workspace create --name <name> --open --editor opencode
 # or:
-workspace new --name <name> --open
+workspace new --name <name> --open --editor claude
 ```
 
 Fails if `<name>` already exists, the template is missing, or the name contains characters outside `[A-Za-z0-9._-]`.
 
-#### `open --name <name>`
+#### `open --name <name> --editor <cmd>`
 
-Switch to the workspace's tmux window if it exists; otherwise create one and start Claude in it. This replaces hand-written `tmux new-window` calls — use it instead.
+Switch to the workspace's tmux window if it exists; otherwise create one and start the given editor in it. `--editor` is required — pass whichever tool the user is working in (e.g. `claude`, `opencode`). This replaces hand-written `tmux new-window` calls — use it instead.
 
 ```bash
-workspace open --name <name>
+workspace open --name <name> --editor opencode
 ```
 
 #### `status --name <name>`
