@@ -34,6 +34,16 @@ All business logic, conventions, and project guidance belong in `AGENTS.md`. Nev
 
 Claude Code automatically loads every `CLAUDE.md` from the session's cwd up to `~`. Each `CLAUDE.md` pulls in its sibling `AGENTS.md`. **Do not** add `@../AGENTS.md` imports in `AGENTS.md` files to "build a chain" — the parent layers are already loaded via the parent `CLAUDE.md`'s auto-walk, and explicit upward imports are redundant noise.
 
+### Workspaces are hermetic (deliberately exempt from the walk)
+
+A workspace is its *own* context and should be unaware it lives inside an orchestration folder. So each workspace's `.claude/settings.json` sets `claudeMdExcludes` to drop this orchestration config — `**/Code/CLAUDE.md`, `**/Code/AGENTS.md`, and the `**/Code/workspaces/` pair — from its walk. A session in a workspace therefore loads **only** that workspace's self-contained `AGENTS.md`, not this file.
+
+Consequences, so neither human nor agent "fixes" them later:
+
+- The overlap between this file's conventions and a workspace's `AGENTS.md` is **not** redundancy to dedupe. The workspace copy is self-contained *on purpose*; the exclude is what stops the parent from bleeding in. Removing the excludes or thinning the workspace `AGENTS.md` breaks the isolation.
+- This is `CLAUDE.md`-memory only. **Skills are unaffected** — they discover via their own walk-up to `~/Code/.claude/skills/`, so a workspace session still has `plan`, `execute`, `workspace`, `memory`, `tdd`, etc.
+- The exclude lives in the workspace template (`templates/workspace/.claude/settings.json`), so every new workspace is hermetic by default. Settings don't inherit, so it must be present in each workspace's own `.claude/`.
+
 ## Editing code
 
 Both humans and AI agents may edit code under `~/Code`. Follow these conventions.
