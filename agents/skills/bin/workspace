@@ -152,11 +152,16 @@ module Workspace
       out.split("\n").include?(name)
     end
 
-    def open(name, cwd, editor)
+    # `prompt`, when present, is appended to the editor command (shell-escaped)
+    # so the launched tool starts with that initial input — e.g. `claude
+    # "Read ./BRIEF.md ..."`. It only applies to a freshly opened window; an
+    # already-existing window is just selected, since its session is live.
+    def open(name, cwd, editor, prompt = nil)
       if window_exists?(name)
         system("tmux", "select-window", "-t", name)
       else
-        system("tmux", "new-window", "-n", name, "-c", cwd, editor)
+        cmd = prompt.nil? || prompt.empty? ? editor : "#{editor} #{Shellwords.escape(prompt)}"
+        system("tmux", "new-window", "-n", name, "-c", cwd, cmd)
       end
     end
 
@@ -276,16 +281,16 @@ end
 
 
 class Application
-  def create(name:, open: false, editor: nil)
+  def create(name:, open: false, editor: nil, prompt: nil)
     entry = Workspace::Entry.create(name)
     puts "Created workspace: #{entry.path}"
-    open(name: name, editor: editor) if open
+    open(name: name, editor: editor, prompt: prompt) if open
   end
 
-  def open(name:, editor:)
+  def open(name:, editor:, prompt: nil)
     entry = Workspace::Entry.new(name)
     raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
-    ok = Workspace::Tmux.open(name, entry.path, editor)
+    ok = Workspace::Tmux.open(name, entry.path, editor, prompt)
     raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
   end
 
@@ -438,22 +443,24 @@ app = Application.new
 begin
   case cmd
   when "create", "new"
-    opts = { name: nil, open: false, editor: nil }
+    opts = { name: nil, open: false, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace #{cmd} --name <name> [--open --editor <cmd>]"
+      o.banner = "Usage: workspace #{cmd} --name <name> [--open --editor <cmd> [--prompt <text>]]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
       o.on("--open", "Open the workspace in tmux after creating") { opts[:open] = true }
       o.on("--editor=CMD", "Editor command to launch in tmux (required with --open)") { |v| opts[:editor] = v }
+      o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "#{cmd} requires --name" if opts[:name].nil? || opts[:name].empty?
     raise Workspace::UsageError, "#{cmd} requires --editor when --open is set" if opts[:open] && (opts[:editor].nil? || opts[:editor].empty?)
     app.create(**opts)
   when "open"
-    opts = { name: nil, editor: nil }
+    opts = { name: nil, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace open --name <name> --editor <cmd>"
+      o.banner = "Usage: workspace open --name <name> --editor <cmd> [--prompt <text>]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
       o.on("--editor=CMD", "Editor command to launch in tmux") { |v| opts[:editor] = v }
+      o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "open requires --name" if opts[:name].nil? || opts[:name].empty?
     raise Workspace::UsageError, "open requires --editor" if opts[:editor].nil? || opts[:editor].empty?

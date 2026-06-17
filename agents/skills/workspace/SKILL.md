@@ -36,24 +36,30 @@ The `workspace` CLI is on `PATH` and permitted via `Bash(workspace:*)` in `~/Cod
 
 ### Commands
 
-#### `create --name <name> [--open --editor <cmd>]` (alias: `new`)
+#### `create --name <name> [--open --editor <cmd> [--prompt <text>]]` (alias: `new`)
 
-Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the given editor in the new workspace. `--editor` is required when `--open` is set.
+Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the given editor in the new workspace. `--editor` is required when `--open` is set. `--prompt` (optional) seeds the launched tool with an initial input — see `open` below.
 
 ```bash
 workspace create --name <name> --open --editor opencode
 # or:
 workspace new --name <name> --open --editor claude
+# seeded launch (e.g. from the `brief` skill):
+workspace create --name <name> --open --editor claude \
+  --prompt "Read ./BRIEF.md and follow it; invoke the plan skill to produce the plan set."
 ```
 
 Fails if `<name>` already exists, the template is missing, or the name contains characters outside `[A-Za-z0-9._-]`.
 
-#### `open --name <name> --editor <cmd>`
+#### `open --name <name> --editor <cmd> [--prompt <text>]`
 
 Switch to the workspace's tmux window if it exists; otherwise create one and start the given editor in it. `--editor` is required — pass whichever tool the user is working in (e.g. `claude`, `opencode`). This replaces hand-written `tmux new-window` calls — use it instead.
 
+`--prompt` (optional) appends an initial input to the editor command (shell-escaped), so the tool starts with that input already submitted — e.g. `claude "Read ./BRIEF.md …"`. It **only applies to a freshly opened window**; if the window already exists, `open` just selects it (the live session can't be re-seeded). The `brief` skill uses this to launch a planner straight onto the brief.
+
 ```bash
 workspace open --name <name> --editor opencode
+workspace open --name <name> --editor claude --prompt "Read ./BRIEF.md and follow it."
 ```
 
 #### `status --name <name>`
