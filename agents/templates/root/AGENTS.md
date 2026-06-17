@@ -114,6 +114,8 @@ The orchestration CLIs (`memory`, `workspace`) are on `PATH` — call them as ba
 
 Skills live at `~/Code/.claude/skills/<name>/SKILL.md`, where Claude Code auto-loads them. Each is a **symlink** to `~/.dotfiles/agents/skills/<name>/` — edit a `SKILL.md` there and it's live immediately (no recompile; still git-tracked in the dotfiles, so still change-controlled). Their backing CLIs live in `agents/skills/bin/` on `PATH`.
 
+The skills compose into an **opt-in idea→implementation pipeline** — `brainstorm → vet → brief → plan → execute` — whose two thinking stages (`brainstorm`, `vet`) run here in the main thread and hand off to a workspace via `brief`. Reach for them deliberately; work is not auto-routed. See `memory/knowledge/skill-pipeline.md` for the full flow, the optional skip-ahead moves, and the invariants.
+
 **Develop skills directly in `~/.dotfiles/agents/skills/`** — like all `~/.dotfiles` edits (see "Prefer editing in a workspace" above), do *not* cut a workspace or worktree. The `~/Code/.claude/skills/*` symlinks point back to that tree, so in-place edits go live immediately and stay git-tracked there (that's the change-control boundary). Commit skill changes in the `~/.dotfiles` repo as usual.
 
 Skills should broadly be structured following the format at https://pi.dev/docs/latest/skills. Accompanying scripts and CLIs should abide by the skill-composition note in the memory store (`memory/knowledge/claude-skill-composition.md`).
