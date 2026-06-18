@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "memory *": "allow",
+      "workspace *": "allow"
+    },
+    "read": "allow",
+    "edit": "allow",
+    "external_directory": {
+      "~/Code/**": "allow",
+      "~/.dotfiles/agents/skills/**": "allow"
+    }
+  }
+}
