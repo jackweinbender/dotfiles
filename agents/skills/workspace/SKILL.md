@@ -109,7 +109,7 @@ workspace destroy --name <name>
 
 ## The `complete` flow
 
-The CLI handles all mechanical work. Two steps require AI judgment and must be done **before** running `complete`:
+The CLI handles all mechanical work. Several steps require AI judgment and must be done **before** running `complete`:
 
 ### 1. Run `workspace status --name <name>` to confirm preflight state
 
@@ -121,17 +121,27 @@ Read `~/Code/workspaces/<name>/WORKSPACE.md` and rewrite the `## Summary` sectio
 
 The CLI will refuse to complete if Summary is empty or still the stub, so this step is enforced.
 
-### 3. Handle workspace TODOs (if a `TODOS.md` exists)
+### 3. Note the session cost
+
+Ask the user for the token and dollar cost from their OpenCode or Claude session
+panel (the exact label varies by tool). Write whatever they provide into the
+`## Cost` section of `WORKSPACE.md` — a one-liner is fine, e.g.:
+`~$0.14 (18k input / 3k output, claude-sonnet-4-5)`.
+
+If the user doesn't have it to hand or wants to skip, leave the stub as-is. The
+CLI does **not** gate on this section — it's informational, not required.
+
+### 4. Handle workspace TODOs (if a `TODOS.md` exists)
 
 Workspace `TODOS.md` is optional — it's not in the template and only exists if created ad-hoc. If `~/Code/workspaces/<name>/TODOS.md` is present with open items in any of `END OF DAY`, `Active followups`, or `TODO`, surface them to the user and ask what to do. The likely default is to roll them up into the matching sections of `~/Code/TODOS.md`, but the user may say to drop specific items or skip the rollup entirely. Resolve every open item before running `complete` — the workspace `TODOS.md` is deleted with the workspace, so anything not migrated is lost.
 
-### 4. Propose durable-knowledge candidates and record them
+### 5. Propose durable-knowledge candidates and record them
 
 Re-read the distilled WORKSPACE.md and identify anything that should outlive the workspace — procedures, design decisions with lasting force, gotchas, conventions, references. **Propose** each to the user as a candidate memory note (a `--slug`, a `--type`, and a one-line `--summary`). **Wait for explicit approval.** If there's nothing durable, say so and skip.
 
 On approval, record each through the `memory` skill — `memory add --slug … --type … --tags … --title … --summary …` — then fill in the body from the WORKSPACE.md detail and commit in `memory/`. This closes the episodic→knowledge loop: the archived log captures *what happened*; the memory note captures the *durable lesson*. Let `memory add` own the frontmatter and `INDEX.md` — don't hand-write into the store. (The completed-work log itself is moved to `~/Code/memory/log/` by the CLI in the next step — don't write there yourself.)
 
-### 5. Run `workspace complete --name <name>` (or `--dry-run` first)
+### 6. Run `workspace complete --name <name>` (or `--dry-run` first)
 
 ```bash
 workspace complete --name <name>
