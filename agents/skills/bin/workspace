@@ -24,6 +24,7 @@ module Workspace
   class DuplicateError   < Error; def kind = "duplicate";         end
   class DirtyWorktreeError < Error; def kind = "dirty_worktree"; end
   class EmptySummaryError  < Error; def kind = "empty_summary";  end
+  class GitError           < Error; def kind = "git_error";       end
 
   # Inspects a single git worktree path. All accessors shell out to git; values
   # are reasonably cheap to recompute, so no memoization.
@@ -63,6 +64,8 @@ module Workspace
     def dirty?
       out = git("status", "--porcelain")
       !out.empty?
+    rescue GitError => e
+      raise DirtyWorktreeError, "git status failed for #{path}: #{e.message}"
     end
 
     def last_commit
@@ -74,6 +77,7 @@ module Workspace
 
     def git(*args)
       out = IO.popen(["git", "-C", path, *args], err: File::NULL, &:read).to_s
+      raise GitError, "git #{args.first} failed (exit #{$?.exitstatus}) in #{path}" unless $?.success?
       out.strip
     end
   end
