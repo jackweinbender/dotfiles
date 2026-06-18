@@ -41,6 +41,7 @@ info "Setting up ~/Code config from ${DOTFILES/#$HOME/~}/agents ..."
 _copy "$_ROOT/AGENTS.md"             "$_CODE/AGENTS.md"             && success "compiled ~/Code/AGENTS.md"
 _copy "$_ROOT/CLAUDE.md"             "$_CODE/CLAUDE.md"             && success "compiled ~/Code/CLAUDE.md"
 _copy "$_ROOT/claude/settings.json"  "$_CODE/.claude/settings.json" && success "compiled ~/Code/.claude/settings.json"
+_copy "$_ROOT/opencode.json"         "$_CODE/opencode.json"         && success "compiled ~/Code/opencode.json"
 _copy "$_ROOT/workspaces/AGENTS.md"  "$_CODE/workspaces/AGENTS.md"  && success "compiled ~/Code/workspaces/AGENTS.md"
 _copy "$_ROOT/workspaces/CLAUDE.md"  "$_CODE/workspaces/CLAUDE.md"  && success "compiled ~/Code/workspaces/CLAUDE.md"
 
