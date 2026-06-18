@@ -52,10 +52,18 @@ File naming: `plans/NNN-short-slug.md`, numbered in recommended execution order.
 - **Effort**: S | M | L
 - **Risk**: LOW | MED | HIGH
 - **Depends on**: 002, 003 (plan numbers — or "none"). The executor for THIS plan
-  branches from current HEAD; every plan listed here must already be DONE **and
-  merged to HEAD** before this plan is dispatched (the execute skill enforces
-  this merge-gate). If two plans share an in-scope file, one must depend on the
-  other — they cannot be executed independently.
+  branches from the tip of its **Target** branch; every plan listed here must
+  already be DONE **and present on that Target branch** before this plan is
+  dispatched (the execute skill enforces this merge-gate). If two plans share an
+  in-scope file, one must depend on the other — they cannot be executed
+  independently.
+- **Target**: <branch> — the branch this plan's work lands on. Omit (or `default`)
+  for the repo's default branch, in which case `execute` treats the plan as
+  **independent**: it opens this plan's own **draft PR** into the default branch
+  and never merges (the user merges the PR). Any other branch names a shared
+  **integration branch**: `execute` merges this plan's branch into it and pushes,
+  and that integration branch carries one draft PR for the whole set. Plans that
+  share an integration branch form a DAG via `Depends on` and land on it in order.
 - **Category**: bug | security | perf | tests | tech-debt | migration | dx | docs | direction | feature
 - **Planned at**: commit `<short SHA>`, <YYYY-MM-DD> (the audited repo's HEAD when written)
 - **Issue**: <GitHub issue URL — only when published via `--issues`; omit otherwise>
@@ -121,7 +129,11 @@ conventions the executor commits under.)
 
 - Branch: `advisor/NNN-<slug>` (or the repo's branch-naming convention if one is evident). Slashes are fine — `execute` flattens `/`→`-` in the worktree directory name while keeping the real branch name.
 - Commit per step or per logical unit; message style: <match repo — include an example from `git log`>
-- Do NOT push, open a PR, or merge to the user's branch. Merging is the operator's decision.
+- Commit only — the executor does NOT push, open a PR, or merge. The reviewer
+  (`execute`) lands the work after approval, per this plan's **Target**: a draft
+  PR into the Target when it's the default branch (the user merges that), or a
+  merge into the Target integration branch otherwise. Either way the executor
+  never touches the default branch directly.
 
 ## Steps
 

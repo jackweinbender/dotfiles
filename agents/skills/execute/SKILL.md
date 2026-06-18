@@ -1,6 +1,6 @@
 ---
 name: execute
-description: Implement a handoff plan from a workspace by dispatching a cheaper executor subagent into an isolated worktree, then reviewing its diff like a tech lead and rendering a verdict. You never edit source yourself; the executor does, in a worktree under the workspace. Enforces the dependency merge-gate (a plan's prerequisites must be DONE and merged to HEAD first) and never merges, pushes, or commits to the user's branch. Use to run a plan produced by `plan` or `improve`, to reconcile plan state since last session, or to publish plans as GitHub issues.
+description: Implement a handoff plan from a workspace by dispatching a cheaper executor subagent into an isolated worktree, then reviewing its diff like a tech lead and rendering a verdict. You never edit source yourself; the executor does, in a worktree under the workspace. After approval you land the work per the plan's Target — push and open a draft PR for an independent plan, or merge into a shared integration branch when the plan targets one — but never merge into or commit to the protected base branch (the repo default). Enforces the dependency merge-gate (a plan's prerequisites must be DONE and present on its Target branch first). Use to run a plan produced by `plan`, `improve`, or `address-comments`, to reconcile plan state since last session, or to publish plans as GitHub issues.
 license: MIT
 metadata:
   author: jack.weinbender
@@ -9,7 +9,7 @@ metadata:
 
 # execute
 
-You are a **tech lead, not an implementer**. You take a self-contained plan from a workspace, dispatch a cheaper executor subagent to implement it in an isolated git worktree, then review the diff like a PR against its spec and render a verdict. You never edit source code, and you **never merge, push, or commit to the user's branch** — merging is the user's decision.
+You are a **tech lead, not an implementer**. You take a self-contained plan from a workspace, dispatch a cheaper executor subagent to implement it in an isolated git worktree, then review the diff like a PR against its spec and render a verdict. You never edit source code. After you approve, you **land** the work — push it and open a draft PR, or merge it into the plan's integration branch — but you **never merge into or commit to the protected base branch** (the repo's default branch), and merging a PR to the base is always the user's decision.
 
 This skill is invariant to who produced the plan. A plan from `plan`, a plan from `improve`, or a hand-written plan all execute identically, because the plan file is the entire interface (the contract is in the `plan` skill's `references/plan-template.md`).
 
@@ -17,13 +17,14 @@ This skill is invariant to who produced the plan. A plan from `plan`, a plan fro
 
 - **Input:** a workspace + a plan file. Defaults: the current workspace (if `cwd` is under `~/Code/workspaces/<name>/`), and the lowest-numbered plan whose `## Status` `State` is `TODO` and whose dependencies are satisfied.
 - **Executor model:** default `sonnet`; use what the user named (`execute 003 haiku`).
-- **Founding rule:** the executor edits code in a disposable worktree; you dispatch and review. The no-mutate rule protects the canonical clone and the user's branch — not the worktree, where running installs/builds/tests is expected and fine.
+- **Target (where the plan lands):** the plan's `## Status` `Target` field, or the repo's default branch when absent. The default branch is the **protected base** → the plan is *independent*: branch off it, and on approval push + open a **draft PR** into it (never merge it). Any other branch is an *integration branch* (non-protected) → branch off it, and on approval **merge into it and push**; it carries one shared draft PR. See *Landing the work* below. The `address-comments` skill sets Target to a PR's existing branch so its fixes converge there.
+- **Founding rule:** the executor edits code in a disposable worktree; you dispatch and review. The no-mutate rule protects the canonical clone and the **protected base** (the repo default) — not the worktree, and not a plan's integration branch, where landing approved work is expected and fine.
 
 ## Preconditions — check all before dispatching
 
 1. **The audited repo is a git repository** (worktree isolation requires it). If not, stop and say so.
 2. **The plan file exists** and its `State` is `TODO` (or you're deliberately re-running it).
-3. **Merge-gate.** For every plan in this plan's `Depends on`: its `State` must be `DONE` **and its changes must be present at HEAD** of the canonical clone — i.e. the user has merged it and pulled. If a dependency is `DONE` but unmerged, **stop**: name it and ask the user to merge + pull first. Every executor branches from a clean, real base; we never stack on unmerged branches.
+3. **Merge-gate.** Resolve this plan's **Target** branch (its `Target` field, or the repo default). For every plan in this plan's `Depends on`: its `State` must be `DONE` **and its changes must be present on the Target branch** — for an independent plan that means the user merged the prereq's PR into the default branch and pulled; for an integration branch it means the prereq was already merged into it (you do that on approval, below). If a dependency is `DONE` but not yet on the Target, **stop**: name it and (in the default-branch case) ask the user to merge + pull first. Every executor branches from a clean, real base; we never stack on unmerged branches.
 4. **Drift check, run by you.** `git -C <repo> diff --stat <Planned-at SHA>..HEAD -- <in-scope paths>`. If in-scope files changed since the plan was written, the plan is stale — refresh it (via `plan`/`improve` or in place) before dispatching. Don't hand an executor a stale plan.
 
 ## Worktree setup (the subagent is a tenant, not an owner)
@@ -33,13 +34,16 @@ Create the worktree under the workspace yourself — do **not** use the Agent to
 The directory follows the `<org>/<repo>-<branchslug>` convention, where **`<branchslug>` is the branch name with `/` replaced by `-`**. The branch keeps its real (slashed) name — only the directory is flattened. This matters: a conventional branch like `advisor/003-foo` left unflattened would nest a directory (`<repo>-advisor/003-foo`) and break `workspace status`/`complete`, which enumerate worktrees by globbing `.worktrees/<org>/*` and expect one level.
 
 ```bash
-branch="advisor/NNN-slug"            # real branch name, from the plan's git workflow
+branch="advisor/NNN-slug"            # this plan's head branch, from its git workflow
 slug="${branch//\//-}"               # advisor-NNN-slug — '/' → '-', directory only
+target="main"                        # the plan's Target (its Status field, or the repo default)
+git -C ~/Code/github.com/<org>/<repo> fetch origin "$target"
 git -C ~/Code/github.com/<org>/<repo> worktree add \
   ~/Code/workspaces/<name>/.worktrees/<org>/<repo>-"$slug" \
-  -b "$branch" HEAD
+  -b "$branch" "origin/$target"
 ```
 
+- Branch from the **tip of the Target** (`origin/<target>` after a fetch), not local `HEAD` — so the executor builds on the real, current base, and on top of any sibling plans already merged into an integration branch.
 - The flattened directory lets multiple plans' worktrees coexist in one workspace without nesting.
 - **Idempotent:** if the worktree path already exists (re-run), reuse it instead of re-adding.
 - The workspace owns lifecycle: `workspace status` sees the worktree; `workspace complete` runs `git worktree remove` and preserves the branch.
@@ -108,9 +112,34 @@ Installing deps or running one build in the fresh worktree is expected, not a de
 
 | Verdict | When | Action |
 |---|---|---|
-| **APPROVE** | Both axes clean: done criteria pass, scope clean, Spec satisfied, Standards holds | Set the plan's `## Status` `State` → `DONE`. Present to the user: diff summary, worktree path + branch, anything from NOTES. Remind them that **merging is theirs** — and that any dependent plan stays gated until they merge this and pull. |
+| **APPROVE** | Both axes clean: done criteria pass, scope clean, Spec satisfied, Standards holds | **Land the work** (see *Landing the work*), then set the plan's `## Status` `State` → `DONE`. Present to the user: diff summary, the PR URL (opened or updated), worktree path + branch, anything from NOTES. For an independent plan, remind them **merging the PR to base is theirs** and any dependent plan stays gated until they merge this and pull; for an integration-branch plan, note it's merged into `<target>` and the shared PR updated. |
 | **REVISE** | Fixable gaps | SendMessage the same executor with specific, actionable feedback ("done-criterion 3 fails: X; the handler at `api.ts:90` swallows the error — use the Result pattern per the plan"). **Max 2 rounds**, then BLOCK. |
 | **BLOCK** | STOP condition hit, scope violated unrecoverably, or revisions exhausted | Set `State` → `BLOCKED` with the reason. Hand the plan back to `plan`/`improve` to refine with what was learned. Tell the user what happened. |
+
+## Landing the work (after APPROVE)
+
+Approval is the gate. Once approved, land the plan according to its **Target** — and never touch the protected base (the repo default) directly. Resolve the target first: the plan's `## Status` `Target` field, or the default branch when absent (`git -C <clone> symbolic-ref --short refs/remotes/origin/HEAD`).
+
+Preflight before any push/PR: `gh auth status` and a GitHub remote must both be present. If either fails, stop after the local commit, leave the work in the worktree, and tell the user what to fix — don't half-land silently. (`gh repo view --json visibility` — if **public**, get explicit confirmation before opening a PR whose plan describes a vulnerability or credential location.)
+
+**Independent plan — Target is the default branch.** The plan ships as its own PR.
+
+1. Push the executor's branch from its worktree: `git -C <worktree> push -u origin <branch>`.
+2. Open or update a **draft** PR into the default branch:
+   - none exists for the branch → `gh pr create --draft --base <default> --head <branch> --title "<plan title>" --body <plan-derived>` (seed the body from "Why this matters" + "Done criteria").
+   - one already exists → the push updated it; refresh title/body only if the plan changed.
+3. Record the PR URL in the plan's `## Status` and `## Plan set`. Merging the PR to base is the **user's** call; dependents stay gated until they merge and pull.
+
+**Integration-branch plan — Target is any other branch.** The plan lands on a shared branch that carries one PR for the whole DAG.
+
+1. Resolve a worktree on the target branch: reuse the one already checked out on it (`git -C <clone> worktree list` — e.g. the worktree `address-comments` provisioned on the PR's branch), else add a transient one (`git -C <clone> worktree add <tmp> <target>`).
+2. **Merge the plan branch into the target** from that worktree — refs are shared, so no push of the plan branch is needed: `git -C <target-worktree> merge --no-ff <branch>`. A merge conflict is a **BLOCK** (the DAG order or scope is wrong) — report it, don't hand-resolve.
+3. Push the target: `git -C <target-worktree> push`.
+4. Ensure the target has exactly **one** draft PR into the default branch: pre-existing (the `address-comments` PR) → leave it, the push updated it; absent and this run owns the integration branch → `gh pr create --draft --base <default> --head <target>`. Never open a second PR.
+
+Merges into a given target **serialize** (one branch checkout — no racing merges). Implementations across independent plans still run in parallel; land them one at a time as each is approved.
+
+`--no-pr` (run modifier) → land locally only: push the branch (independent) or merge into the target (integration), but skip PR creation. For when the PR is managed elsewhere.
 
 ## Variants
 
@@ -129,8 +158,8 @@ The full rationale (and the alternatives deliberately rejected) lives in the `pl
 
 - **The subagent is a worktree tenant, never `isolation: "worktree"`.** That harness mechanism creates an ephemeral worktree *outside* the workspace (invisible to `workspace status`/`complete`) and requires the caller's cwd to be a repo — which it isn't, running from the workspace root or `~/Code`. So you create the worktree under the workspace and scope the executor by instruction. The reviewer's scope check is what makes by-instruction scoping safe — that's why it's non-negotiable, not a formality.
 - **You review; you never fix.** The moment the reviewer edits code, the clean separation that lets a cheaper executor be trusted (because every change is reviewed against the spec) collapses. Send feedback via REVISE instead.
-- **Merge-gate, not auto-chain.** Dependents wait for prerequisites to be merged to HEAD so every executor branches from a clean, real base and you keep the integration decision. Don't "optimize" this into stacking on unmerged branches — that's a rejected alternative for good reasons (tall unreviewed stacks, poison-the-chain).
-- **Never merge, push, or commit to the user's branch.** The no-mutate rule protects the canonical clone and the user's branch; the disposable worktree is the one place mutation is expected.
+- **Merge-gate, not auto-chain.** Dependents wait for prerequisites to be present on the **Target** branch so every executor branches from a clean, real base and the integration decision stays explicit. For an independent plan that gate is the user merging the prereq's PR to base; for an integration branch it's the prereq already merged into it. Don't "optimize" this into stacking on unmerged branches — that's a rejected alternative for good reasons (tall unreviewed stacks, poison-the-chain).
+- **Land approved work; never touch the protected base.** After approval you push and open a draft PR (independent plan) or merge into the plan's integration branch and push (integration plan). What stays forbidden is committing to or merging into the **protected base** (the repo default) and merging any PR to it — those are the user's calls. The canonical clone is never mutated; the worktree and a non-protected integration branch are where landing happens. The **draft** PR is deliberate: it publishes the work for review (and for bots like bugbot to comment on — which `address-comments` then triages) while keeping the merge in the user's hands.
 
 ## Wrapping up
 

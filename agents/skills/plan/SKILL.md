@@ -78,7 +78,7 @@ For each unit of work, write `plans/NNN-slug.md` from the template. Before writi
 ### Phase 4 — Record the plan set and hand off
 
 - Write `WORKSPACE.md`'s `## Plan set`: the recommended execution order, the dependency graph, and any alternatives you considered and rejected/deferred (with one line each, so they aren't re-planned). Record the planning narrative (decisions, what you investigated) in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled, so seeding it now both jumps the gun and breaks that guard).
-- Tell the user the plans are ready and point them at the `execute` skill. Surface the dependency ordering and the **merge-gate**: a plan that depends on another can only be executed once that prerequisite is DONE *and merged to HEAD* (you merge it, then pull), so dependents wait on your merges.
+- Tell the user the plans are ready and point them at the `execute` skill. Surface the dependency ordering and the **merge-gate**: a plan that depends on another can only be executed once that prerequisite is DONE *and present on its `Target` branch* — for independent plans (Target = default branch) that means you merge its draft PR and pull, so dependents wait on your merges; for plans sharing an integration branch `execute` lands them there in order.
 
 For a large multi-plan set, consider `workspace open --name <name> --editor claude` to drive execution from a dedicated session, keeping the root context clean.
 
