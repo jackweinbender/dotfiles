@@ -21,7 +21,3 @@ completed_on:
 ## Summary
 
 _Filled in when the workspace is completed._
-
-## Cost
-
-_Noted when the workspace is completed._
