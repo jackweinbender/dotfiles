@@ -4,6 +4,9 @@ export PATH="$HOME/.local/bin:$PATH"
 # Add custom bin directory to PATH
 export PATH="$DOTFILES/bin:$PATH"
 
+# Add Bun global binaries to PATH if installed
+[[ -d "$HOME/.bun/bin" ]] && export PATH="$HOME/.bun/bin:$PATH"
+
 # Add the agents topic's skill CLIs (memory, workspace) to PATH if present
 [[ -d "$DOTFILES/agents/skills/bin" ]] && export PATH="$DOTFILES/agents/skills/bin:$PATH"
 
