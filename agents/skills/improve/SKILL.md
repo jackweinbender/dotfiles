@@ -103,7 +103,7 @@ Write each selected finding as `plans/NNN-slug.md` using the shared template at 
 - **Serialize scope overlaps:** if two plans share an in-scope file, one must `Depend on` the other (so `execute`'s merge-gate enforces one rule).
 - If a `plans/` dir already exists, **reconcile, don't duplicate**: keep numbering monotonic, skip findings already planned or rejected, mark superseded plans stale.
 
-Finish by writing `WORKSPACE.md`'s `## Plan set` (execution order, dependency graph, considered-and-rejected findings), with the audit narrative in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled). Then hand off: point the user at the `execute` skill, surfacing dependency order and the merge-gate (a dependent plan waits until its prerequisite is DONE *and merged to HEAD*).
+Finish by writing `WORKSPACE.md`'s `## Plan set` (execution order, dependency graph, considered-and-rejected findings), with the audit narrative in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled). Then hand off: point the user at the `execute` skill, surfacing dependency order and the merge-gate (a dependent plan waits until its prerequisite is DONE *and present on its `Target` branch* — a merged draft PR for independent plans, or landed on the shared integration branch).
 
 ## Invocation variants
 
