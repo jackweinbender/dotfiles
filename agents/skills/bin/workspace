@@ -165,7 +165,12 @@ module Workspace
         system("tmux", "select-window", "-t", name)
       else
         cmd = prompt.nil? || prompt.empty? ? editor : "#{editor} #{Shellwords.escape(prompt)}"
-        system("tmux", "new-window", "-n", name, "-c", cwd, cmd)
+        ok = system("tmux", "new-window", "-n", name, "-c", cwd, cmd)
+        return ok unless ok
+        # Split off a bottom pane running a plain shell in the workspace cwd,
+        # then return focus to the editor pane on top.
+        system("tmux", "split-window", "-v", "-l", "30%", "-t", name, "-c", cwd)
+        system("tmux", "select-pane", "-t", name, "-U")
       end
     end
 

@@ -55,6 +55,8 @@ Fails if `<name>` already exists, the template is missing, or the name contains 
 
 Switch to the workspace's tmux window if it exists; otherwise create one and start the given editor in it. `--editor` is required — pass whichever tool the user is working in (e.g. `claude`, `opencode`). This replaces hand-written `tmux new-window` calls — use it instead.
 
+A **freshly opened** window is split into two panes: the editor on top, and a plain shell (your default shell) rooted in the workspace cwd as a ~30%-height bottom pane, with focus left on the editor. An **existing** window is just re-selected — no re-split.
+
 `--prompt` (optional) appends an initial input to the editor command (shell-escaped), so the tool starts with that input already submitted — e.g. `claude "Read ./BRIEF.md …"`. It **only applies to a freshly opened window**; if the window already exists, `open` just selects it (the live session can't be re-seeded). The `brief` skill uses this to launch a planner straight onto the brief.
 
 ```bash
