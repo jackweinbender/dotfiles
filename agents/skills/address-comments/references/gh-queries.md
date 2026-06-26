@@ -128,3 +128,20 @@ gh api "repos/$OWNER/$REPO/issues/$PR/comments" -f body="$BODY"
   the work queue shrinks as threads resolve).
 - `isOutdated == true` means the line the comment was on has since changed. Worth
   surfacing in triage: an outdated bot nit is often already moot.
+- **jq shape footgun (object vs array).** `gh pr view <n> --json <fields>` returns
+  an **object keyed by those field names** — iterate as `.reviews[]`,
+  `.comments[]`, etc., *never* bare `.[]` (that yields the field's value, then your
+  `.author`/`select` fails with `expected an object but got: array`). By contrast
+  `gh api .../pulls/<n>/reviews` and `.../issues/<n>/comments` return a **bare
+  array** — there `.[]` is correct. The two sit side by side above; don't cross
+  the wires. Also: `-q` is just an alias for `--jq` — pass **one**, never both
+  (`-q --jq '…'` makes `gh` read `--jq` as `-q`'s value and errors on the real
+  expression).
+- **Detecting that a bot has (re)reviewed.** Prefer the status check over scraping
+  review bodies: `gh pr checks <n>` exposes a **`Cursor Bugbot`** check —
+  `pass` = reviewed, no issues; `fail` = issues found (then fetch the threads).
+  It's a cleaner completion+verdict signal than parsing the review markdown, and
+  it sidesteps the jq-shape footgun entirely. (If you must parse the review body,
+  it's `gh pr view <n> --json reviews --jq '.reviews[] | …'`.) Remember bots
+  re-review **asynchronously** — minutes after a push — so let the self-paced
+  `loop` re-invoke you rather than spinning a bespoke bash poll loop.
