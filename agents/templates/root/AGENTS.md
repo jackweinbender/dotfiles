@@ -19,6 +19,7 @@ Data is never touched: `memory/`, `github.com/`, and live `workspaces/<name>/` a
 
 - `github.com/` — contains all of the extant cloned git repos. Repos follow their exact path from `github.com` to `<org>/<repo>`. So, the `acme/widgets` repo represents a repo cloned from `git@github.com:acme/widgets.git`.
 - `memory/` — the shared memory store: `knowledge/` (recall notes) + `log/` (episodic archives). Git-tracked markdown, not code; edits here are prose. See `## Memory` below.
+- `personal/` — symlink to `memory/pkm/`, a separate personal Obsidian vault. Not wired into the `memory` skill; treat it as opaque personal data.
 - `workspaces/` — each subdirectory is a workspace with its own `AGENTS.md` and `.worktrees/`.
 
 ## CLAUDE.md vs AGENTS.md
