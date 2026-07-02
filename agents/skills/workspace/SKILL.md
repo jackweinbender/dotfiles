@@ -36,32 +36,34 @@ The `workspace` CLI is on `PATH` and permitted via `Bash(workspace:*)` in `~/Cod
 
 ### Commands
 
-#### `create --name <name> [--open --editor <cmd> [--prompt <text>]]` (alias: `new`)
+#### `create --name <name> [--open [--editor <cmd>] [--prompt <text>]]` (alias: `new`)
 
-Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the given editor in the new workspace. `--editor` is required when `--open` is set. `--prompt` (optional) seeds the launched tool with an initial input — see `open` below.
+Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the editor in the new workspace. `--editor` is optional — when omitted it defaults to the agent tool you launched from (see `open` below for how that's inferred). `--prompt` (optional) seeds the launched tool with an initial input — see `open` below.
 
 ```bash
-workspace create --name <name> --open --editor opencode
-# or:
+# launches whichever agent you're running in (opencode or claude):
+workspace create --name <name> --open
+# force a specific editor:
 workspace new --name <name> --open --editor claude
 # seeded launch (e.g. from the `brief` skill):
-workspace create --name <name> --open --editor claude \
+workspace create --name <name> --open \
   --prompt "Read ./BRIEF.md and follow it; invoke the plan skill to produce the plan set."
 ```
 
 Fails if `<name>` already exists, the template is missing, or the name contains characters outside `[A-Za-z0-9._-]`.
 
-#### `open --name <name> --editor <cmd> [--prompt <text>]`
+#### `open --name <name> [--editor <cmd>] [--prompt <text>]`
 
-Switch to the workspace's tmux window if it exists; otherwise create one and start the given editor in it. `--editor` is required — pass whichever tool the user is working in (e.g. `claude`, `opencode`). This replaces hand-written `tmux new-window` calls — use it instead.
+Switch to the workspace's tmux window if it exists; otherwise create one and start the editor in it. `--editor` is optional: when omitted, the CLI infers the editor from the agent tool you launched from — it reads the calling process's environment (`OPENCODE` → `opencode`; `CLAUDECODE`/`CLAUDE_CODE_SSE_PORT` → `claude`), so a new window inherits your current agent. Pass `--editor` explicitly to override (e.g. `claude`, `opencode`, `vim`). If neither an explicit editor nor a known agent is detected, the command errors. This replaces hand-written `tmux new-window` calls — use it instead.
 
 A **freshly opened** window is split into two panes: the editor on top, and a plain shell (your default shell) rooted in the workspace cwd as a ~30%-height bottom pane, with focus left on the editor. An **existing** window is just re-selected — no re-split.
 
-`--prompt` (optional) appends an initial input to the editor command (shell-escaped), so the tool starts with that input already submitted — e.g. `claude "Read ./BRIEF.md …"`. It **only applies to a freshly opened window**; if the window already exists, `open` just selects it (the live session can't be re-seeded). The `brief` skill uses this to launch a planner straight onto the brief.
+`--prompt` (optional) seeds the launched tool with an initial input, using the tool-specific form: a bare positional for `claude` (`claude "Read ./BRIEF.md …"`) and the `--prompt` flag for `opencode` (`opencode --prompt "…"`); unknown tools get the positional form. It **only applies to a freshly opened window**; if the window already exists, `open` just selects it (the live session can't be re-seeded). The `brief` skill uses this to launch a planner straight onto the brief.
 
 ```bash
-workspace open --name <name> --editor opencode
-workspace open --name <name> --editor claude --prompt "Read ./BRIEF.md and follow it."
+workspace open --name <name>                        # inherits your current agent
+workspace open --name <name> --editor opencode      # force a specific editor
+workspace open --name <name> --prompt "Read ./BRIEF.md and follow it."
 ```
 
 #### `status --name <name>`

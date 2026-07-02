@@ -147,6 +147,47 @@ module Workspace
     end
   end
 
+  # Resolves which editor/agent tool to launch and how to seed it with an
+  # initial prompt. When no editor is given explicitly, we infer it from the
+  # environment of the *calling* process — i.e. the agent tool that shelled out
+  # to `workspace` — so a new window inherits the tool you launched from. The
+  # CLI inherits its parent agent's env (it runs as a child via that agent's
+  # shell-out), which is where these fingerprints come from.
+  module Editor
+    module_function
+
+    # Env fingerprints left by known agent tools in their session's process.
+    def infer
+      return "opencode" if ENV.key?("OPENCODE")
+      return "claude"   if ENV.key?("CLAUDECODE") || ENV.key?("CLAUDE_CODE_SSE_PORT")
+      nil
+    end
+
+    # Resolve the editor command: explicit value wins, else infer from env.
+    # Returns nil if neither is available (caller decides whether that's fatal).
+    def resolve(explicit)
+      return explicit if explicit && !explicit.empty?
+      infer
+    end
+
+    # Build the shell command that launches `editor`, optionally seeded with an
+    # initial `prompt`. Tools differ in how they take a seed:
+    #   - claude:   bare positional  ->  claude "…"
+    #   - opencode: --prompt flag    ->  opencode --prompt "…"
+    # Unknown tools fall back to the positional form.
+    def command(editor, prompt = nil)
+      return editor if prompt.nil? || prompt.empty?
+      seed = Shellwords.escape(prompt)
+      base = File.basename(editor.to_s.split(/\s/).first.to_s)
+      case base
+      when "opencode"
+        "#{editor} --prompt #{seed}"
+      else
+        "#{editor} #{seed}"
+      end
+    end
+  end
+
   module Tmux
     module_function
 
@@ -156,15 +197,16 @@ module Workspace
       out.split("\n").include?(name)
     end
 
-    # `prompt`, when present, is appended to the editor command (shell-escaped)
-    # so the launched tool starts with that initial input — e.g. `claude
-    # "Read ./BRIEF.md ..."`. It only applies to a freshly opened window; an
-    # already-existing window is just selected, since its session is live.
+    # `prompt`, when present, seeds the launched tool with an initial input via
+    # the tool-specific form (see Editor.command) — e.g. `claude "Read
+    # ./BRIEF.md ..."` or `opencode --prompt "…"`. It only applies to a freshly
+    # opened window; an already-existing window is just selected, since its
+    # session is live.
     def open(name, cwd, editor, prompt = nil)
       if window_exists?(name)
         system("tmux", "select-window", "-t", name)
       else
-        cmd = prompt.nil? || prompt.empty? ? editor : "#{editor} #{Shellwords.escape(prompt)}"
+        cmd = Editor.command(editor, prompt)
         ok = system("tmux", "new-window", "-n", name, "-c", cwd, cmd)
         return ok unless ok
         # Split off a bottom pane running a plain shell in the workspace cwd,
@@ -299,7 +341,9 @@ class Application
   def open(name:, editor:, prompt: nil)
     entry = Workspace::Entry.new(name)
     raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
-    ok = Workspace::Tmux.open(name, entry.path, editor, prompt)
+    resolved = Workspace::Editor.resolve(editor)
+    raise Workspace::UsageError, "could not determine editor: pass --editor or run from a known agent (opencode/claude)" if resolved.nil?
+    ok = Workspace::Tmux.open(name, entry.path, resolved, prompt)
     raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
   end
 
@@ -429,8 +473,9 @@ parser = OptionParser.new do |opts|
 
     Commands:
       create   --name <name> [--open]     Create a new workspace from the template
-        (alias: new)
+        (alias: new)                      (--open launches your current agent unless --editor given)
       open     --name <name>              Open or switch to the workspace's tmux window
+        [--editor <cmd>]                  (editor defaults to the agent you launched from)
       status   --name <name>              Show worktree and WORKSPACE.md state
       list                                List workspaces with summary state
       complete --name <name> [--dry-run]  Tear down a finished workspace
@@ -454,25 +499,23 @@ begin
   when "create", "new"
     opts = { name: nil, open: false, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace #{cmd} --name <name> [--open --editor <cmd> [--prompt <text>]]"
+      o.banner = "Usage: workspace #{cmd} --name <name> [--open [--editor <cmd>] [--prompt <text>]]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
       o.on("--open", "Open the workspace in tmux after creating") { opts[:open] = true }
-      o.on("--editor=CMD", "Editor command to launch in tmux (required with --open)") { |v| opts[:editor] = v }
+      o.on("--editor=CMD", "Editor command to launch in tmux (defaults to the agent you launched from)") { |v| opts[:editor] = v }
       o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "#{cmd} requires --name" if opts[:name].nil? || opts[:name].empty?
-    raise Workspace::UsageError, "#{cmd} requires --editor when --open is set" if opts[:open] && (opts[:editor].nil? || opts[:editor].empty?)
     app.create(**opts)
   when "open"
     opts = { name: nil, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace open --name <name> --editor <cmd> [--prompt <text>]"
+      o.banner = "Usage: workspace open --name <name> [--editor <cmd>] [--prompt <text>]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
-      o.on("--editor=CMD", "Editor command to launch in tmux") { |v| opts[:editor] = v }
+      o.on("--editor=CMD", "Editor command to launch in tmux (defaults to the agent you launched from)") { |v| opts[:editor] = v }
       o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "open requires --name" if opts[:name].nil? || opts[:name].empty?
-    raise Workspace::UsageError, "open requires --editor" if opts[:editor].nil? || opts[:editor].empty?
     app.open(**opts)
   when "status"
     opts = { name: nil }

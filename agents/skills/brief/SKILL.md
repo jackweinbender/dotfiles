@@ -132,18 +132,21 @@ a re-derivation of the codebase — that's `plan`'s job in the workspace.
 Create-and-open with a seed prompt so the fresh session starts on the brief:
 
 ```bash
-workspace create --name <slug> --open --editor claude \
+workspace create --name <slug> --open \
   --prompt "Read ./BRIEF.md and follow it; invoke the plan skill to produce the plan set."
 ```
 
-(If reusing an existing workspace, use `workspace open --name <slug> --editor
-claude --prompt "…"` instead — note the seed only takes effect on a *freshly
-opened* window; if the window already exists, brief the user to read BRIEF.md
-manually.)
+`--editor` is omitted on purpose: the CLI infers it from the agent you're
+launching from, so the new session runs the same tool (opencode or claude). Pass
+`--editor <cmd>` only to override.
+
+(If reusing an existing workspace, use `workspace open --name <slug> --prompt
+"…"` instead — note the seed only takes effect on a *freshly opened* window; if
+the window already exists, brief the user to read BRIEF.md manually.)
 
 Phrase the seed in **natural language** ("invoke the plan skill"), not a literal
-`/plan` — a positional initial prompt isn't guaranteed to parse as a slash
-command, but the agent will invoke the `plan` skill from the instruction.
+`/plan` — a seeded initial prompt isn't guaranteed to parse as a slash command,
+but the agent will invoke the `plan` skill from the instruction.
 
 Then tell the user the workspace is live and the planner is running.
 
