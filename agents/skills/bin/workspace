@@ -47,7 +47,9 @@ module Workspace
     end
 
     def upstream
-      out = git("rev-parse", "--abbrev-ref", "HEAD@{upstream}")
+      # No upstream configured makes rev-parse exit 128; that's a normal state
+      # (e.g. a branch whose remote was deleted after merge), not an error.
+      out = git("rev-parse", "--abbrev-ref", "HEAD@{upstream}", allow_failure: true)
       out.empty? ? nil : out
     end
 
@@ -75,9 +77,12 @@ module Workspace
 
     private
 
-    def git(*args)
+    def git(*args, allow_failure: false)
       out = IO.popen(["git", "-C", path, *args], err: File::NULL, &:read).to_s
-      raise GitError, "git #{args.first} failed (exit #{$?.exitstatus}) in #{path}" unless $?.success?
+      unless $?.success?
+        return "" if allow_failure
+        raise GitError, "git #{args.first} failed (exit #{$?.exitstatus}) in #{path}"
+      end
       out.strip
     end
   end
