@@ -14,20 +14,18 @@ if [ -z "$TMUX" ]; then
     # state, so each terminal window can be looking at a different tmux window
     # simultaneously. $$ is this shell's PID, giving each terminal a unique name.
     #
-    # Also open a fresh window for this terminal so each new terminal starts on
-    # its own window rather than wherever the group was last viewed. The window
-    # persists in "default" after the terminal closes.
-    tmux new-session -t default -s "term-$$" \; new-window
+    # Open a fresh window for this terminal so each new terminal starts on its
+    # own window rather than wherever the group was last viewed. Capture its id
+    # so the EXIT trap can remove it — otherwise every terminal leaks one window
+    # into the shared "default" session, and they accumulate forever.
+    win=$(tmux new-window -d -t default: -P -F '#{window_id}')
+    trap "tmux kill-window -t '$win' 2>/dev/null; tmux kill-session -t 'term-$$' 2>/dev/null" EXIT
+    tmux new-session -t default -s "term-$$" \; select-window -t "$win"
   else
-    # No "default" session exists yet — create it fresh.
-    # Subsequent terminals will group themselves to this one.
+    # No "default" session exists yet — create it fresh. This session is the
+    # persistent base: it is NOT torn down on exit, so its windows survive for
+    # the next terminal. Subsequent terminals group themselves to it (above).
     tmux new-session -s default
   fi
-
-  # When this terminal window is closed, kill its grouped session.
-  # This keeps `tmux ls` clean — without this, every closed terminal
-  # leaves behind a dead "term-XXXX" session. The "default" session
-  # itself is unaffected, and all windows/history remain intact.
-  trap "tmux kill-session -t 'term-$$' 2>/dev/null" EXIT
 
 fi
