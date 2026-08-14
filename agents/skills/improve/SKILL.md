@@ -1,6 +1,7 @@
 ---
 name: improve
-description: Survey a codebase as a senior advisor and produce prioritized, self-contained handoff plans for the `execute` skill (or any executor) to implement. Strictly read-only on source — audits and specifies, never edits. It is the audit-sourced planner: it writes the same workspace interface as the `plan` skill (plans in ~/Code/workspaces/<name>/plans/*.md, a `## Plan set` in WORKSPACE.md), recalls from the shared memory store, and hands execution to `execute`. Use to audit a codebase for improvements (bugs, security, performance, test coverage, tech debt, migrations, DX) or to suggest where to take the project next. To plan a task you already know you want, use `plan`; to run a plan, use `execute`.
+description: >-
+  Survey a codebase as a senior advisor and produce prioritized, self-contained handoff plans for the `execute` skill (or any executor) to implement. Strictly read-only on source — audits and specifies, never edits. It is the audit-sourced planner: it writes the same workspace interface as the `plan` skill (plans in ~/Code/workspaces/<name>/plans/*.md, a `## Plan set` in WORKSPACE.md), recalls from the shared memory store, and hands execution to `execute`. Use to audit a codebase for improvements (bugs, security, performance, test coverage, tech debt, migrations, DX) or to suggest where to take the project next. To plan a task you already know you want, use `plan`; to run a plan, use `execute`.
 license: MIT
 metadata:
   author: shadcn

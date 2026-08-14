@@ -1,6 +1,7 @@
 ---
 name: brainstorm
-description: The divergent front of the pipeline — open the solution space when you have a goal but no settled approach. Intentionally antagonistic toward the *framing*: it challenges whether this is even the right problem, negates hidden assumptions, and forces genuinely distinct approaches (do-nothing, buy-don't-build, invert, move the constraint) to escape the first plausible answer. Grounds options in the codebase and memory, recalls from and records to the shared store, then narrows to one recommended direction (+ rejected alternatives) to hand to `vet`. Conversational — writes no files. Use to generate or rethink approaches, or on a trigger ("brainstorm", "what are my options", "rethink this", "help me think through X"). The pipeline: brainstorm → vet → brief → plan → execute.
+description: >-
+  The divergent front of the pipeline — open the solution space when you have a goal but no settled approach. Intentionally antagonistic toward the *framing*: it challenges whether this is even the right problem, negates hidden assumptions, and forces genuinely distinct approaches (do-nothing, buy-don't-build, invert, move the constraint) to escape the first plausible answer. Grounds options in the codebase and memory, recalls from and records to the shared store, then narrows to one recommended direction (+ rejected alternatives) to hand to `vet`. Conversational — writes no files. Use to generate or rethink approaches, or on a trigger ("brainstorm", "what are my options", "rethink this", "help me think through X"). The pipeline: brainstorm → vet → brief → plan → execute.
 license: MIT
 metadata:
   author: jack.weinbender

@@ -1,6 +1,7 @@
 ---
 name: vet
-description: Stress-test a plan or design you already hold — interrogate it one question at a time, each with a recommended answer, walking the decision tree and resolving dependencies until you reach shared understanding. Recall from and record to the shared memory store as decisions crystallize. Explore the codebase to answer your own questions instead of asking. Use to pressure-test an idea before committing, or on a 'grill'/'vet' trigger ("grill me", "vet this", "vet this plan", "poke holes in this"). The convergent front of the pipeline: vet → brief → plan → execute.
+description: >-
+  Stress-test a plan or design you already hold — interrogate it one question at a time, each with a recommended answer, walking the decision tree and resolving dependencies until you reach shared understanding. Recall from and record to the shared memory store as decisions crystallize. Explore the codebase to answer your own questions instead of asking. Use to pressure-test an idea before committing, or on a 'grill'/'vet' trigger ("grill me", "vet this", "vet this plan", "poke holes in this"). The convergent front of the pipeline: vet → brief → plan → execute.
 ---
 
 # vet

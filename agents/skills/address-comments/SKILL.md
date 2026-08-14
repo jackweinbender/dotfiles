@@ -1,6 +1,6 @@
 ---
 name: address-comments
-description: |
+description: >-
   Handle a pull request's open review comments — from humans and from review bots (cursor/bugbot, coderabbit, copilot) — end to end. Provisions (or reuses) a workspace whose worktree tracks the PR's branch, fetches every unresolved thread via gh, triages each (human comments are authoritative intent; bot findings are verified adversarially against the code before acting), then addresses them size-gated: trivial fixes applied in the worktree, substantial ones as plans targeting the PR branch and run through execute. Closes the loop autonomously — pushes, replies to each thread with what was done or why dismissed, and resolves it — then records durable bot/repo patterns to memory. Use to address PR review comments, respond to a bot review, resolve review threads, or "handle the bugbot comments".
 license: MIT
 metadata:
