@@ -1,6 +1,7 @@
 ---
 name: brief
-description: Distill the current main-thread conversation — a vetted idea and its decisions — into a self-contained BRIEF.md, cut a fresh workspace, drop the brief in it, and launch an agent there seeded to run `plan`. The bridge from conversation to workspace: it carries context and decisions (including TDD intent) across the session boundary so a zero-context planner can pick up cold. References artifacts (memory notes, repos, prior docs) by path — never duplicates them. Strictly a carrier, not a planner — it never investigates code or writes plans. The second step of the pipeline: vet → brief → plan → execute.
+description: >-
+  Distill the current main-thread conversation — a vetted idea and its decisions — into a self-contained BRIEF.md, cut a fresh workspace, drop the brief in it, and launch an agent there seeded to run `plan`. The bridge from conversation to workspace: it carries context and decisions (including TDD intent) across the session boundary so a zero-context planner can pick up cold. References artifacts (memory notes, repos, prior docs) by path — never duplicates them. Strictly a carrier, not a planner — it never investigates code or writes plans. The second step of the pipeline: vet → brief → plan → execute.
 argument-hint: "what the next session should focus on"
 disable-model-invocation: true
 license: MIT
