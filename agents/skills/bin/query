@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# query — read-only passthrough wrapper for common inspection tools (bq, kubectl, gcloud logging).
+#
+# Validates the invoked tool+subcommand against an explicit allowlist of read-only
+# prefixes, then execs the real binary directly (no shell). Args are never passed
+# through a shell, so there's no injection surface via ; | && or backticks — the
+# allowlist can't be bypassed by chaining commands.
+
+module Query
+  ALLOWLIST = [
+    %w[bq query],
+    %w[bq show],
+    %w[bq ls],
+    %w[bq head],
+    %w[kubectl logs],
+    %w[kubectl get],
+    %w[kubectl describe],
+    %w[kubectl top],
+    %w[gcloud logging read],
+  ].freeze
+
+  class Error < StandardError
+    def kind = "error"
+  end
+  class UsageError      < Error; def kind = "invalid_argument"; end
+  class NotAllowedError < Error; def kind = "not_allowed";      end
+  class NotFoundError   < Error; def kind = "not_found";        end
+
+  module_function
+
+  def run(argv)
+    if argv.empty?
+      print_help($stderr)
+      exit 2
+    end
+
+    if %w[-h --help].include?(argv.first)
+      print_help($stdout)
+      exit 0
+    end
+
+    prefix = matching_prefix(argv)
+    raise NotAllowedError, "#{argv.join(' ')} — does not match an allowed read-only prefix" unless prefix
+
+    tool = argv.first
+    raise NotFoundError, "#{tool} not found on PATH" unless executable_on_path?(tool)
+
+    Kernel.exec(*argv)
+  rescue Error => e
+    warn "query: #{e.message} (#{e.kind})"
+    warn "" if e.kind == "not_allowed"
+    print_help($stderr) if e.kind == "not_allowed"
+    exit 2
+  end
+
+  def matching_prefix(argv)
+    ALLOWLIST.find { |prefix| argv[0, prefix.size] == prefix }
+  end
+
+  def executable_on_path?(cmd)
+    return false if cmd.include?(File::SEPARATOR) # reject explicit paths, PATH lookup only
+    ENV["PATH"].to_s.split(File::PATH_SEPARATOR).any? { |dir| File.executable?(File.join(dir, cmd)) }
+  end
+
+  def print_help(io)
+    io.puts <<~HELP
+      usage: query <tool> <subcommand> [args...]
+
+      Runs a read-only inspection command directly (no shell) after checking it
+      matches one of the allowed prefixes below. Everything you type after
+      `query` is passed through verbatim to the real binary via exec — no
+      shell, so no ;/|/&&/backtick injection.
+
+      allowed prefixes:
+      #{ALLOWLIST.map { |p| "  query #{p.join(' ')} ..." }.join("\n")}
+    HELP
+  end
+end
+
+Query.run(ARGV)
