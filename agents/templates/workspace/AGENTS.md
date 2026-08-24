@@ -9,7 +9,11 @@ This is an independent workspace under `~/Code/workspaces/`. It is self-containe
 ## Working here
 
 - **Edit in worktrees.** All edits happen inside `.worktrees/<org>/<repo>-<branchname>/`. Never edit the clones under `~/Code/github.com/`.
-- **Keep `WORKSPACE.md` current.** It is this workspace's running log — append decisions, dead ends, and links as work progresses. On completion it is distilled and archived to `~/Code/memory/log/`.
+- **`WORKSPACE.md` has two kinds of content, kept current differently:**
+  - **`## Log`** is a running, append-only history — add an entry each time something happens (a decision, a dead end, a link). Never rewrite past entries yourself; only the `workspace` skill's `snapshot` procedure may compact old entries, and only for brevity, never to change what happened.
+  - **`## Notes` and `## Status`** must always reflect the *current* state of the work, not its history. When something changes — a decision reverses, a fact turns out wrong — edit the stale claim away in place. Don't leave both the old and corrected versions in the document; if the reversal itself is worth keeping, that belongs in the Log as a compact entry, not as leftover prose here. `## Status` is a flat done/in-progress/todo list — no narrative.
+  - If the workspace is getting large and you want to hand off to a fresh session without ending the workspace, see the `snapshot` procedure in the `workspace` skill.
+- On completion, `WORKSPACE.md` is distilled and archived to `~/Code/memory/log/`.
 - **Lifecycle** is managed by the `workspace` CLI on `PATH` (create / open / status / complete / destroy). Don't reinvent it in ad-hoc shell.
 - **Push discipline.** Don't push to, or change the state of, PRs that are marked done/ready-for-human-review without an explicit go-ahead. Prepare the change locally, ask, then execute.
 - **Commit types.** Infrastructure-only changes (node pool migrations, version bumps, in-place upgrades, IAM cleanup) are `chore(<scope>): ...`, not `feat` — reserve `feat` for net-new modules, services, or capability surface.

@@ -6,8 +6,14 @@ metadata:
 # Notes
 
 
+## Status
+
+<!-- Flat list only: done / in-progress / todo. No narrative — that belongs in ## Log. -->
+
+
 ## Log
 
+<!-- snapshot marker: entries above this line are archived (compacted); entries below are since the last snapshot. Leave this line in place. -->
 
 ## Summary
 

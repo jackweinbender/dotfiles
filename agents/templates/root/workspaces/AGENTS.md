@@ -8,7 +8,7 @@ All edits happen inside `.worktrees/<org>/<repo>-<branchslug>/` (the branch name
 
 ## Keep WORKSPACE.md current
 
-`WORKSPACE.md` is the workspace's running log. Append notes as work progresses — decisions, dead ends, links. On completion it's distilled and archived to `~/Code/memory/log/`.
+`WORKSPACE.md` has two kinds of content. `## Log` is a running, append-only history — append decisions, dead ends, links as work progresses; only the `workspace` skill's `snapshot` procedure may compact old entries (for brevity, never to change what happened). `## Notes` and `## Status` must always reflect the *current* state of the work — edit stale claims away in place rather than leaving both old and corrected versions. On completion the whole file is distilled and archived to `~/Code/memory/log/`.
 
 ## TODOs (optional)
 
