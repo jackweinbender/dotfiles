@@ -1,6 +1,6 @@
 ---
 name: workspace
-description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, complete (distill WORKSPACE.md, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, wrap up, or abandon a workspace.
+description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, snapshot (mid-flight WORKSPACE.md compaction for a clean handoff, no teardown), complete (distill WORKSPACE.md, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, compact, wrap up, or abandon a workspace.
 ---
 
 # workspace
@@ -18,6 +18,7 @@ Invoke when the user asks to:
 - open or switch into a workspace ("jump into X", "open the X window")
 - inspect a workspace's state ("what's in X?", "is X clean?")
 - complete a workspace ("close out X", "wrap up X")
+- snapshot a workspace mid-flight ("compact this workspace", "clean this up so I can hand it off", "snapshot my work")
 - destroy a workspace ("nuke X", "trash X", "force-delete X" — for throwaways with no work worth archiving)
 - list workspaces ("what workspaces do I have?")
 
@@ -142,6 +143,43 @@ workspace complete --name <name>
 ```
 
 Report the preserved-branches output back to the user.
+
+## Snapshotting a workspace (mid-flight hygiene)
+
+`snapshot` is **not a CLI command** — it's a procedure you perform directly on `WORKSPACE.md` with Read/Edit, the same way `complete`'s Summary-distillation step is AI judgment rather than code. Once backups and previews are off the table (see below), there is no deterministic work left to delegate to the CLI, so this stays entirely in this document.
+
+Use it when a workspace's `WORKSPACE.md` has grown cluttered with churn — reversed decisions, corrected facts, dead ends — and you want the *next* session (yours after a restart, or a different agent) to pick up from a small, current document instead of re-deriving state from a long history. Unlike `complete`, `snapshot` doesn't end the workspace, touch worktrees, or open/close any session — it only rewrites `WORKSPACE.md`.
+
+**This operation is irreversible.** There is no backup and no dry-run — read carefully before you save. Both were considered and deliberately rejected: workspace directories aren't git-tracked, and the goal was to keep this simple rather than build undo machinery.
+
+### Precondition
+
+`workspace status --name <name>` should report `WORKSPACE.md` as `populated`. If it's `empty` or `stub`, there's nothing to snapshot.
+
+### 1. Compact `## Log`
+
+`## Log` carries a marker comment (seeded by the template: `<!-- snapshot marker: entries above this line are archived (compacted); entries below are since the last snapshot -->`). Entries **below** the marker are since the last snapshot — full, verbatim, as written during work. Entries **above** it are the archive — already one terse line each, in original order.
+
+- Rewrite every entry currently below the marker into a single terse line each (the fingerprint of what happened, not the full reasoning), preserving relative order.
+- Append those lines, in order, to the end of the archive block, above the marker.
+- Move the marker to the end of `## Log` — nothing is "since the last snapshot" again until new entries land after it.
+- Leave lines already above the marker untouched. This is a one-time demotion per entry (full → terse), not progressive re-compaction on every run — that's enough to make older entries read shorter than newer ones without tracking how many times each line has been compacted.
+
+### 2. Refresh `## Notes` and `## Status`
+
+These sections should always read as the current state of understanding, not a history of how you got there.
+
+- Read the whole section. Delete anything superseded, reversed, or corrected — don't mark it "superseded" and leave it sitting next to the correction; only the true version should remain.
+- If a reversal is worth remembering for provenance (e.g. "tried X, reverted because Y"), that belongs as a compacted `## Log` line, not as leftover prose here.
+- Normalize `## Status` to a flat done/in-progress/todo list — no narrative.
+
+### 3. Stop
+
+Don't open a new session, touch tmux, or touch worktrees. Starting a fresh session on the compacted workspace is a separate, already-existing step: `workspace open --name <name>`.
+
+### When your own context is the problem
+
+Default to doing this yourself, inline, in the session that just did the work — you have the freshest read on what's actually superseded, and a fresh subagent would only have to re-derive that same judgment cold from the same messy document. But if your own context is already too degraded to trust that judgment — the reason you're bailing in the first place — dispatch a fresh subagent to read `WORKSPACE.md` cold and perform the same two steps instead.
 
 ## Adding new commands
 
