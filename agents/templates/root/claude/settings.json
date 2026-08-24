@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(memory:*)",
-      "Bash(workspace:*)"
+      "Bash(workspace:*)",
+      "Bash(query:*)"
     ],
     "deny": [],
     "ask": []
