@@ -86,6 +86,10 @@ Use **absolute paths**, because the executor works in a worktree elsewhere on di
 - The repo conventions that apply here, with a pointer to one exemplar file:
   "Error handling follows the Result pattern — see `src/lib/result.ts` and its
   use in `src/users/api.ts:40-60`. Match it."
+- Comment discipline is cross-repo, not per-plan: the executor applies
+  `~/Code/memory/knowledge/code-comments.md` (default to no comment; keep only
+  non-obvious WHYs; no task narrative in the source). Don't restate it — note
+  it only where this repo deviates (e.g. a required docblock convention).
 - Any documented vocabulary or design constraints the plan must honor, inlined
   from the intent/design docs found during investigation: the relevant
   `CONTEXT.md` terms to use in names and comments, the `DESIGN.md` tokens to
