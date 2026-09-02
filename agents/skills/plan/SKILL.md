@@ -15,20 +15,9 @@ This is the general-purpose planner. It shares the plan contract and workspace i
 
 ## The interface (shared with `improve` and `execute`)
 
-Plans live in a workspace, glued to the executor by files on disk — never by conversation context:
+Plans live in a workspace, glued to the executor by files on disk — never by conversation context.
 
-```
-~/Code/workspaces/<name>/
-  WORKSPACE.md     # narrative + ## Plan set (execution order, dependency graph, rejected/deferred alternatives)
-  plans/
-    001-<slug>.md   # numbered in recommended execution order
-    002-<slug>.md
-  .worktrees/        # execute creates executor worktrees here
-```
-
-**Each plan's `## Status` block is the single source of truth** for its live `State` and its `Depends on` prerequisites. `WORKSPACE.md`'s `## Plan set` is a *derived* human-readable view (order + dependency graph); if the two disagree, the plan files win. There is no separate index/status file.
-
-Read [references/plan-template.md](references/plan-template.md) before writing your first plan — it is the contract every plan must satisfy and the standard `execute` reviews against.
+**Read [references/plan-template.md](references/plan-template.md) before writing your first plan.** It is the contract every plan must satisfy and the standard `execute` reviews against, shared verbatim with `improve`, and it defines the workspace layout, the `## Status` block (the single source of truth for a plan's `State` and `Depends on`), `Target`, the **merge-gate**, and the `## Test plan` TDD seam.
 
 ## Hard rules
 
@@ -73,12 +62,12 @@ For each unit of work, write `plans/NNN-slug.md` from the template. Before writi
 - If the task naturally decomposes, write multiple numbered plans and set their `Depends on` edges to reflect execution order.
 - **Serialize scope overlaps:** if two plans list any of the same file in `In scope`, one must `Depend on` the other — they cannot be executed independently (the second would drift once the first lands). This is what lets `execute` enforce a single rule.
 - Keep each plan to the weakest-plausible-executor bar: all context inlined (absolute paths, current-state excerpts, conventions + exemplar), ordered steps each with a verification command and expected output, explicit in/out-of-scope lists, machine-checkable done criteria, a test plan, STOP conditions, and maintenance notes.
-- **Set the test plan's TDD seam honestly.** For logic-bearing or bug-fix work, mark `TDD: yes` and enumerate the **behaviors to test** as specifications through the public interface (the planning gate the executor consumes — it won't re-derive them). For config/docs/pure-refactor/infra plans, mark `TDD: no` with a one-line reason. The discipline is the `tdd` skill; the test-quality bar is `~/Code/memory/knowledge/testing-discipline.md`.
+- **Set the test plan's TDD seam honestly** — the template's `## Test plan` section defines the contract. Carry the seam from the brief where there is one, rather than re-deriving it.
 
 ### Phase 4 — Record the plan set and hand off
 
 - Write `WORKSPACE.md`'s `## Plan set`: the recommended execution order, the dependency graph, and any alternatives you considered and rejected/deferred (with one line each, so they aren't re-planned). Record the planning narrative (decisions, what you investigated) in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled, so seeding it now both jumps the gun and breaks that guard).
-- Tell the user the plans are ready and point them at the `execute` skill. Surface the dependency ordering and the **merge-gate**: a plan that depends on another can only be executed once that prerequisite is DONE *and present on its `Target` branch* — for independent plans (Target = default branch) that means you merge its draft PR and pull, so dependents wait on your merges; for plans sharing an integration branch `execute` lands them there in order.
+- Tell the user the plans are ready and point them at the `execute` skill. Surface the dependency ordering and the **merge-gate** (defined in the template) — for independent plans it means the user's merges pace the dependents.
 
 For a large multi-plan set, consider `workspace open --name <name>` to drive execution from a dedicated session, keeping the root context clean (the editor defaults to whichever agent you're running in).
 

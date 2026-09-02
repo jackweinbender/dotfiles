@@ -18,11 +18,8 @@ drop the document in it, and launch an agent there pointed at the next step
 (usually `plan`). You carry context across the session boundary — you do **not**
 investigate code or write plans yourself.
 
-This is the second step of the pipeline:
-
-```
-vet  →  brief  →  plan  →  execute
-```
+This is the second step of the pipeline — `vet → brief → plan → execute`,
+mapped in `~/Code/memory/knowledge/skill-pipeline.md`.
 
 `vet` is the convergent conversation that pins the decisions (in the main
 thread, with clean memory access). `brief` packages that resolved intent and

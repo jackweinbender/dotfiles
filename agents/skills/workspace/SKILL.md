@@ -1,6 +1,6 @@
 ---
 name: workspace
-description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, snapshot (mid-flight WORKSPACE.md compaction for a clean handoff, no teardown), complete (distill WORKSPACE.md, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, compact, wrap up, or abandon a workspace.
+description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, snapshot (mid-flight WORKSPACE.md compaction for a clean handoff, no teardown), complete (distill WORKSPACE.md, retro the environment for defects worth fixing, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, compact, wrap up, or abandon a workspace.
 ---
 
 # workspace
@@ -114,7 +114,7 @@ workspace destroy --name <name>
 
 ## The `complete` flow
 
-The CLI handles all mechanical work. Two steps require AI judgment and must be done **before** running `complete`:
+The CLI handles all mechanical work. Steps 2–5 require AI judgment and must be done **before** running `complete`.
 
 ### 1. Run `workspace status --name <name>` to confirm preflight state
 
@@ -136,7 +136,50 @@ Re-read the distilled WORKSPACE.md and identify anything that should outlive the
 
 On approval, record each through the `memory` skill — `memory add --slug … --type … --tags … --title … --summary …` — then fill in the body from the WORKSPACE.md detail and commit in `memory/`. This closes the episodic→knowledge loop: the archived log captures *what happened*; the memory note captures the *durable lesson*. Let `memory add` own the frontmatter and `INDEX.md` — don't hand-write into the store. (The completed-work log itself is moved to `~/Code/memory/log/` by the CLI in the next step — don't write there yourself.)
 
-### 5. Run `workspace complete --name <name>` (or `--dry-run` first)
+### 5. Retro — what the environment cost this run
+
+Step 4 harvests durable *knowledge*. This step harvests **environment defects**:
+the things about the agent's surroundings that made this run slower, wronger, or
+more expensive than it needed to be. The output is proposed edits to skills,
+`AGENTS.md`, or the repo's checks — never memory notes.
+
+Re-read the `## Log` for friction, and look specifically for:
+
+- **Navigation** — how long did it take to find the right file? Was there a
+  hidden dependency between files nothing pointed at? *Fires when the log shows
+  a long hunt for one piece of information.*
+- **Automated checks** — could a linter, type check, test, or schema validation
+  have caught a mistake that a human or a review round caught instead? *Fires on
+  any mistake a machine could have named.*
+- **Reviewer rules** — should `execute`'s Standards axis carry a new rule, or a
+  clarified one? *Fires when review missed something, or flagged something it
+  should not have.*
+- **Steering files** — is an instruction in an `AGENTS.md` doing work that a
+  coding standard or an automated check should do instead? *Fires when an
+  `AGENTS.md` is growing.*
+- **Tool economy** — which tool calls were expensive for what they returned? Is
+  a CLI or MCP server token-inefficient in a way a wrapper could fix? *Fires
+  after an expensive call.*
+- **No-ops** — an instruction in a skill or steering file that the model already
+  obeys by default. Grade it against the test in
+  `~/Code/memory/knowledge/writing-for-agents.md`. *Fires when a steering file
+  is large.*
+- **Information access** — was a crucial fact simply unreachable? A log stream
+  not teed, a dashboard without read access, an env var never surfaced. *Fires
+  when the agent had to guess at something observable.*
+
+Present the candidates ordered by severity, each naming the **fix and its home**
+— a skill edit, an `AGENTS.md` line, a new check, a wrapper in `skills/bin/`, or
+an access request. **Wait for approval before editing anything.** Nothing found
+is a normal and good outcome; say so and move on.
+
+Route by where the cost lands. Implementation carries the most **context
+pressure** — it explores, writes, and debugs — while review receives a diff and
+carries the least. So a new *standard* belongs on the review axis, not in the
+implementer's prompt; only a rule the implementer must hold *while writing*
+earns a place in `AGENTS.md`.
+
+### 6. Run `workspace complete --name <name>` (or `--dry-run` first)
 
 ```bash
 workspace complete --name <name>
