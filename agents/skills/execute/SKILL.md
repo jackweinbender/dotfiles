@@ -133,9 +133,9 @@ Preflight before any push/PR: `gh auth status` and a GitHub remote must both be 
 **Independent plan — Target is the default branch.** The plan ships as its own PR.
 
 1. Push the executor's branch from its worktree: `git -C <worktree> push -u origin <branch>`.
-2. Open or update a **draft** PR into the default branch:
-   - none exists for the branch → `gh pr create --draft --base <default> --head <branch> --title "<plan title>" --body <plan-derived>` (seed the body from "Why this matters" + "Done criteria").
-   - one already exists → the push updated it; refresh title/body only if the plan changed.
+2. Open or update a **draft** PR into the default branch. Write the title and body through the `pr-description` skill — you are the best-placed caller it will ever have, holding the plan, the executor's report, both review axes' findings, and the verification you re-ran yourself:
+   - none exists for the branch → `gh pr create --draft --base <default> --head <branch> --title "<title>" --body-file <tmp>`.
+   - one already exists → the push updated the *diff*, not the description. Refresh title and body whenever the plan or the accepted scope moved since it was written.
 3. Record the PR URL in the plan's `## Status` and `## Plan set`. Merging the PR to base is the **user's** call; dependents stay gated until they merge and pull.
 
 **Integration-branch plan — Target is any other branch.** The plan lands on a shared branch that carries one PR for the whole DAG.
@@ -143,7 +143,8 @@ Preflight before any push/PR: `gh auth status` and a GitHub remote must both be 
 1. Resolve a worktree on the target branch: reuse the one already checked out on it (`git -C <clone> worktree list` — e.g. the worktree `address-comments` provisioned on the PR's branch), else add a transient one (`git -C <clone> worktree add <tmp> <target>`).
 2. **Merge the plan branch into the target** from that worktree — refs are shared, so no push of the plan branch is needed: `git -C <target-worktree> merge --no-ff <branch>`. A merge conflict is a **BLOCK** (the DAG order or scope is wrong) — report it, don't hand-resolve.
 3. Push the target: `git -C <target-worktree> push`.
-4. Ensure the target has exactly **one** draft PR into the default branch: pre-existing (the `address-comments` PR) → leave it, the push updated it; absent and this run owns the integration branch → `gh pr create --draft --base <default> --head <target>`. Never open a second PR.
+4. Ensure the target has exactly **one** draft PR into the default branch: pre-existing (the `address-comments` PR) → leave it, the push updated it; absent and this run owns the integration branch → `gh pr create --draft --base <default> --head <target> --title "<title>" --body-file <tmp>`, via `pr-description`. Never open a second PR.
+   This PR describes the **whole DAG**, not the plan that happened to land first, so refresh its body as each later plan merges in. Passing no `--title`/`--body` here would let GitHub name the PR after the branch — that's a defect, not a default.
 
 Merges into a given target **serialize** (one branch checkout — no racing merges). Implementations across independent plans still run in parallel; land them one at a time as each is approved.
 

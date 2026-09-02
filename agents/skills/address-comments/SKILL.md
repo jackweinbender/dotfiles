@@ -154,6 +154,12 @@ so the rationale stays attached:
 - **Issue-level / review-summary bot comments** have no thread to resolve —
   respond with a new comment only if warranted, and account for them in the
   summary.
+- **The PR description itself**, when the pass changed what the PR claims: a
+  newly accepted limitation, a behavior that moved, a dismissal whose refutation
+  the human reader deserves outside a collapsed thread. Refresh it through the
+  `pr-description` skill — your thread replies and verification are its evidence.
+  Leave it alone for typo fixes; a stale description is a defect, an
+  over-rewritten one is noise.
 
 Replies and resolutions use the GraphQL mutations in the references doc. Report a
 final summary: per thread, what you did; the PR URL; anything left for the user

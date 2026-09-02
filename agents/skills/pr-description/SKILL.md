@@ -17,7 +17,7 @@ The conventions are in [references/conventions.md](references/conventions.md) �
 
 ## Phase 0 — Locate the PR and its template
 
-- **Which PR.** An argument (`#140305`, a URL, or a number) names it. No argument → the current branch's PR: `gh pr view --json number,title,body,isDraft,baseRefName,headRefName`. No PR for the branch → say so and stop; opening one is `execute`'s job or an explicit ask.
+- **Which PR.** An argument (`#140305`, a URL, or a number) names it. No argument → the current branch's PR: `gh pr view --json number,title,body,isDraft,baseRefName,headRefName`. No PR for the branch → you are drafting one for creation, so continue and hand the finished title and body back to whoever is landing the work (`execute` does exactly this); if nothing is landing and no PR exists, say so and stop.
 - **Read the repo's template**, and treat it as authoritative for structure: `.github/pull_request_template.md` or `.github/PULL_REQUEST_TEMPLATE.md` (both casings exist across repos; some are empty). You fill its sections — you do not replace them with your own skeleton.
 - **Read the existing body.** A retrofit preserves anything the human wrote (ticket links, screenshots, demo videos); you are adding rigor, not overwriting their content.
 
