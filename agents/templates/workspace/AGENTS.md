@@ -15,6 +15,7 @@ This is an independent workspace under `~/Code/workspaces/`. It is self-containe
   - If the workspace is getting large and you want to hand off to a fresh session without ending the workspace, see the `snapshot` procedure in the `workspace` skill.
 - On completion, `WORKSPACE.md` is distilled and archived to `~/Code/memory/log/`.
 - **Lifecycle** is managed by the `workspace` CLI on `PATH` (create / open / status / complete / destroy). Don't reinvent it in ad-hoc shell.
+- **Code comments.** Default to no comment. Add one only for a non-obvious WHY — a hidden constraint, a subtle invariant, a workaround for surprising behavior, a rationale you can't guess from the code. Never leave task narrative in source: no references to this task, plan, PR, or reviewer, no "changed from X", no transitional framing ("during the migration", "for now") — those belong in the commit message. Full conventions: `~/Code/memory/knowledge/code-comments.md`.
 - **Push discipline.** Don't push to, or change the state of, PRs that are marked done/ready-for-human-review without an explicit go-ahead. Prepare the change locally, ask, then execute.
 - **Commit types.** Infrastructure-only changes (node pool migrations, version bumps, in-place upgrades, IAM cleanup) are `chore(<scope>): ...`, not `feat` — reserve `feat` for net-new modules, services, or capability surface.
 
