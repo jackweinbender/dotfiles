@@ -66,6 +66,14 @@ Spawn **one** subagent (`general-purpose`, the chosen model, no `isolation` — 
 > the plan's git workflow — do NOT push, open a PR, or merge. One override:
 > SKIP updating any plan status — your reviewer maintains it.
 >
+> Write code that reads like the code around it — match the conventions and the
+> exemplar file the plan names. Before adding any comment, read
+> `~/Code/memory/knowledge/code-comments.md` and apply it: default to no
+> comment, keep only the non-obvious WHYs (rationale, gotchas, invariants,
+> deliberate non-actions). Leave no task narrative in the source — no reference
+> to this plan, its steps, the PR, or what the code used to do; that belongs in
+> your commit message and your report.
+>
 > Cadence: typecheck and run the relevant single test file frequently as you
 > go (not just at the end); run the full suite once before reporting. If the
 > plan's `## Test plan` marks `TDD: yes`, build those behaviors test-first —
@@ -93,7 +101,7 @@ NOTES: anything the reviewer should know (deviations, surprises, judgment calls)
 Review the finished diff like a tech lead reviewing a PR — never fix anything yourself. The review runs on **two independent axes, always fanned out to two parallel read-only sub-agents**:
 
 - **Spec** — did it build the *right thing*? (done criteria met, solves "Why this matters", in scope, no creep) — judged against the plan only.
-- **Standards** — did it build the thing *right*? (repo conventions, code health, test quality vs `~/Code/memory/knowledge/testing-discipline.md`).
+- **Standards** — did it build the thing *right*? (repo conventions, code health, comment discipline vs `~/Code/memory/knowledge/code-comments.md`, test quality vs `~/Code/memory/knowledge/testing-discipline.md`).
 
 Dispatch both (`Explore` or `general-purpose`, no `isolation`, read-only) with the worktree path, the full plan text inlined, and the executor's report. The exact prompts are in [references/review-axes.md](references/review-axes.md) — read it. Then **aggregate, don't merge**: report findings under separate **Spec** and **Standards** headings. The separation is the point — a diff can follow every convention while building the wrong thing (fails Spec, clean Standards), or nail the requirement while being sloppy and untested (fails Standards, clean Spec). Bundling lets one clean axis mask the other's failure.
 

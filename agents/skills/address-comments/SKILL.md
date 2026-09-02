@@ -119,8 +119,11 @@ Handle the buckets in this order so later work branches off earlier work cleanly
 
 1. **Trivial fixes** — apply directly in the PR-branch worktree, commit per fix
    (message referencing the comment), then **push**. If a fix changes behavior,
-   add/adjust a test for it (invoke `tdd`). Doing these first means substantial
-   plans branch off a tip that already includes them.
+   add/adjust a test for it (invoke `tdd`). Fix the code, not the record: never
+   leave a comment explaining the review comment or what the code used to do —
+   that lives in the commit message and the thread reply (see
+   `~/Code/memory/knowledge/code-comments.md`). Doing these first means
+   substantial plans branch off a tip that already includes them.
 2. **Substantial fixes** — write a plan per coherent unit (one thread or a related
    cluster) using the plan template, with **`Target` set to the PR's head branch**
    so it's an *integration-branch* plan. Then run `execute` on it: it branches off

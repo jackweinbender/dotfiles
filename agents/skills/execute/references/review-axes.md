@@ -3,7 +3,7 @@
 `execute` reviews a finished worktree diff on **two independent axes**, each by its own read-only sub-agent dispatched in parallel:
 
 - **Spec** — did it build the *right thing*? (against the plan only)
-- **Standards** — did it build the thing *right*? (conventions, code health, test quality)
+- **Standards** — did it build the thing *right*? (conventions, code health, comment discipline, test quality)
 
 The axes are reported **separately and never merged**. The reason is masking: a diff that follows every convention but implements the wrong behavior must fail **Spec** even though **Standards** is clean; a diff that nails the requirement but is sloppy and untested must fail **Standards** even though **Spec** is clean. Bundling them lets one clean axis hide the other's failure.
 
@@ -49,7 +49,15 @@ Dispatch both with: the absolute worktree path, the **full plan text inlined**, 
 >    like the rest of the codebase?
 > 2. **Code health** — duplication, dead code, leaked complexity, obvious
 >    inefficiency, missing error handling introduced by this diff.
-> 3. **Test quality** — audit the new/changed tests against
+> 3. **Comment discipline** — audit every comment the diff adds against
+>    `~/Code/memory/knowledge/code-comments.md`. Flag comments that restate what
+>    the code already says, narrate the task (plan/step/PR/reviewer references,
+>    "changed from X"), use transitional framing ("during the migration", "for
+>    now", "until X is removed"), paraphrase a decision that lives in a doc
+>    instead of pointing at it, or repeat a WHY already anchored at another call
+>    site. Over-commenting is a finding, not a courtesy — but so is a missing
+>    WHY for a non-obvious choice.
+> 4. **Test quality** — audit the new/changed tests against
 >    `~/Code/memory/knowledge/testing-discipline.md`. Flag tests that assert
 >    nothing, mock internal collaborators, assert data *shape* instead of
 >    behavior, reach into private state, or would stay green if the behavior
