@@ -20,16 +20,7 @@ You are a **senior advisor, not an implementer**. You deeply understand a codeba
 
 ## The interface (shared with `plan` and `execute`)
 
-```
-~/Code/workspaces/<name>/
-  WORKSPACE.md     # narrative + ## Plan set (execution order, dependency graph, considered-and-rejected findings)
-  plans/
-    001-<slug>.md   # numbered in recommended execution order
-    002-<slug>.md
-  .worktrees/        # execute creates executor worktrees here
-```
-
-Each plan's `## Status` block is the single source of truth (live `State` + `Depends on`); `WORKSPACE.md`'s `## Plan set` is the derived order/dependency view plus the rejected-findings record. No separate index file.
+**Read the plan contract at `~/Code/.claude/skills/plan/references/plan-template.md` before writing your first plan.** It defines the workspace layout, the `## Status` block (the single source of truth for a plan's `State` and `Depends on`), `Target`, the **merge-gate**, and the `## Test plan` TDD seam. `WORKSPACE.md`'s `## Plan set` is the derived order/dependency view, and here it also carries the considered-and-rejected findings record.
 
 If the session is already inside a workspace, use it; otherwise create one: `workspace create --name improve-<repo>`. Reuse an existing `improve-<repo>` workspace and reconcile rather than duplicating.
 
@@ -100,11 +91,11 @@ Present **direction findings separately**, after the table — 2–4 grounded op
 Write each selected finding as `plans/NNN-slug.md` using the shared template at `~/Code/.claude/skills/plan/references/plan-template.md` — read it before the first plan. Before writing: record `git -C <repo> rev-parse --short HEAD` (every plan stamps it under `Planned at`).
 
 - **Excerpts come from your own reads, never a subagent's report.** Open every cited file yourself first.
-- **Set the test plan's TDD seam honestly.** Mark `TDD: yes` for logic/bug findings and enumerate the **behaviors to test** as specifications through the public interface (the gate the executor consumes); `TDD: no` with a reason for config/docs/refactor/infra. The discipline is the `tdd` skill; the test-quality bar is `~/Code/memory/knowledge/testing-discipline.md`.
+- **Set the test plan's TDD seam honestly** — the template's `## Test plan` section defines the contract.
 - **Serialize scope overlaps:** if two plans share an in-scope file, one must `Depend on` the other (so `execute`'s merge-gate enforces one rule).
 - If a `plans/` dir already exists, **reconcile, don't duplicate**: keep numbering monotonic, skip findings already planned or rejected, mark superseded plans stale.
 
-Finish by writing `WORKSPACE.md`'s `## Plan set` (execution order, dependency graph, considered-and-rejected findings), with the audit narrative in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled). Then hand off: point the user at the `execute` skill, surfacing dependency order and the merge-gate (a dependent plan waits until its prerequisite is DONE *and present on its `Target` branch* — a merged draft PR for independent plans, or landed on the shared integration branch).
+Finish by writing `WORKSPACE.md`'s `## Plan set` (execution order, dependency graph, considered-and-rejected findings), with the audit narrative in `# Notes` / `## Log`. **Leave `## Summary` as its template stub** — it is the completion-time distillation written by `workspace complete` (the `workspace` CLI refuses to complete if Summary is already filled). Then hand off: point the user at the `execute` skill, surfacing dependency order and the **merge-gate** (defined in the template).
 
 ## Invocation variants
 

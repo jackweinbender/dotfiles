@@ -16,12 +16,8 @@ Your job is to widen, not narrow: generate genuinely distinct directions, attack
 the framing that produced the obvious ones, and only at the end converge on a
 single recommended direction to hand forward.
 
-This is the divergent front of the pipeline:
-
-```
-brainstorm  →  vet  →  brief  →  plan  →  execute
-(widen)        (narrow)  (record)  (spec)   (build)
-```
+This is the divergent front of the pipeline — `brainstorm → vet → brief → plan
+→ execute`, mapped in `~/Code/memory/knowledge/skill-pipeline.md`.
 
 `brainstorm` and `vet` are mirror images — both adversarial, in opposite
 directions. `vet` attacks the **solution** to harden it (converge: poke holes
@@ -82,7 +78,7 @@ You run from the main thread, where access to the shared memory store is clean.
 - **Record durable findings as they settle.** A reframing that will recur, a
   pattern you chose, or a dead-end worth not revisiting → capture it with
   `memory add --slug … --type … --tags … --title … --summary …` (type ∈
-  `reference|procedure|convention|pattern|identity`), fill in the body, commit in
+  `reference|procedure|convention|pattern|identity|glossary`), fill in the body, commit in
   `memory/`. A well-reasoned rejected approach is worth a `pattern` note so it
   isn't re-proposed next time.
 - **Route by durability.** Durable, reusable knowledge → `memory/`. The chosen

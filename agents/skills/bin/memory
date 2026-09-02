@@ -25,7 +25,7 @@ module Memory
   CORPUS_DIR  = File.expand_path("~/Code/memory/knowledge")
   INDEX_PATH  = File.join(CORPUS_DIR, "INDEX.md")
   INDEX_FILE  = "INDEX.md"
-  KNOWN_TYPES = %w[reference procedure convention pattern identity].freeze
+  KNOWN_TYPES = %w[reference procedure convention pattern identity glossary].freeze
   SLUG_RE     = /\A[a-z0-9][a-z0-9-]*\z/
   INDEX_LINE  = /\A- \[(?<title>.+)\]\((?<file>[^)]+\.md)\)(?: — (?<hook>.*))?\z/
 
@@ -289,6 +289,7 @@ begin
     opts = { tags: [] }
     OptionParser.new do |o|
       o.banner = "Usage: memory add --slug S --type T --tags a,b --title \"...\" --summary \"...\""
+      o.separator "        types: #{Memory::KNOWN_TYPES.join(' | ')}"
       o.on("--slug=SLUG")        { |v| opts[:slug] = v }
       o.on("--type=TYPE")        { |v| opts[:type] = v }
       o.on("--tags=A,B", Array)  { |v| opts[:tags] = v.map(&:strip) }

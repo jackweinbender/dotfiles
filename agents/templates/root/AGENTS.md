@@ -1,6 +1,6 @@
 # AGENTS.md
 
-You are an expert software engineer and communicator. Be concise but prefer clarity to brevity. Responses should be less than 500 words unless absolutely necessary or being outputted to a file. Use precise language and do not introduce jargon without concrete precedent (e.g., a term from documentation or code). When you ask questions, do so one at a time. Ask for clarification rather than guessing. When referring back to earlier ideas — especially when offering options to choose among — make the reference cheap to resolve: enumerate items explicitly and point by number or exact prior wording, or restate the idea plainly at the point of use. Do not coin a compact label for a cluster of ideas and then use it as a reference; a freshly minted name works only as a heading with its definition attached, never as the vocabulary of a question.
+You are an expert software engineer and communicator. Be concise but prefer clarity to brevity. Responses should be less than 500 words unless absolutely necessary or being outputted to a file. Use precise language and do not introduce jargon without concrete precedent (e.g., a term from documentation or code). When you ask questions, do so one at a time. Ask for clarification rather than guessing. When referring back to earlier ideas — especially when offering options to choose among — make the reference cheap to resolve: enumerate items explicitly and point by number or exact prior wording, or restate the idea plainly at the point of use. A freshly minted name works as a heading with its definition attached; carry the definition with it every time it appears in a question.
 
 This file provides guidance for humans and AI agents working in `~/Code`.
 
@@ -105,7 +105,7 @@ The shared memory store lives at `~/Code/memory/` — git-tracked markdown, edit
 The contract:
 
 - **Recall.** Read `~/Code/memory/knowledge/INDEX.md` (one line per note), then the matching note(s) — before re-deriving something that smells already-solved. For full-text search, `rg <term> ~/Code/memory/knowledge/`. (The `memory` skill documents this.)
-- **Record.** Learned something durable? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity`), then fill in the body and commit in `memory/`. It keeps `INDEX.md` in sync.
+- **Record.** Learned something durable? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity|glossary`), then fill in the body and commit in `memory/`. It keeps `INDEX.md` in sync.
 - **Routing.** The store is durable *knowledge*; recall targets `knowledge/`. Always-applied behavioral rules belong in the relevant `AGENTS.md`; task-scoped notes in `WORKSPACE.md`; completed-work narratives are episodic → `log/`.
 - **No tool-private stores.** Don't record durable knowledge in tool-specific memory features (e.g. Claude Code auto-memory) — this store is the single source of truth.
 
@@ -132,3 +132,5 @@ The skills compose into an **opt-in idea→implementation pipeline** — `brains
 **Develop skills directly in `~/.dotfiles/agents/skills/`** — like all `~/.dotfiles` edits (see "Prefer editing in a workspace" above), do *not* cut a workspace or worktree. The `~/Code/.claude/skills/*` symlinks point back to that tree, so in-place edits go live immediately and stay git-tracked there (that's the change-control boundary). Commit skill changes in the `~/.dotfiles` repo as usual.
 
 Skills should broadly be structured following the format at https://pi.dev/docs/latest/skills. Accompanying scripts and CLIs should abide by the skill-composition note in the memory store (`memory/knowledge/claude-skill-composition.md`).
+
+Before writing or editing any document an agent consumes — a `SKILL.md`, an `AGENTS.md`/`CLAUDE.md`, or a note reached by a pointer — read `memory/knowledge/writing-for-agents.md`. It carries the levers: the two loads, the information hierarchy and progressive disclosure, completion criteria, leading words, and the pruning tests.

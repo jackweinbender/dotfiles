@@ -29,9 +29,13 @@ the decisions are pinned, hand the resolved intent to `brief`.
   become questions for the user.
 - **Follow the dependencies.** Order questions so an earlier answer unlocks the
   next; don't ask something whose framing depends on a decision not yet made.
-- **Stop when understanding is shared,** not when you run out of questions. When
-  the remaining choices are immaterial or clearly the user's call with an obvious
-  default, say so and stop.
+- **Stop when the frontier is empty.** The **frontier** is every decision whose
+  prerequisites are already settled — the questions you can ask *now* without
+  guessing at answers you haven't heard. Each answer reshapes the tree and pushes
+  the frontier outward. You are done when it is empty: every branch visited,
+  nothing silently assumed. A branch closes either by being decided or by being
+  named immaterial out loud ("this is your call and the default is X") — never by
+  going unmentioned.
 
 When the plan involves behavior change, one axis worth vetting is **which
 behaviors actually matter to test** — you can't test everything, so pin the
@@ -51,7 +55,7 @@ Use it on both sides of the conversation:
   something that outlives this one idea — a convention you've now decided, a
   domain fact, a gotcha, a transferable pattern — capture it with `memory add
   --slug … --type … --tags … --title … --summary …` (type ∈
-  `reference|procedure|convention|pattern|identity`), fill in the body, and
+  `reference|procedure|convention|pattern|identity|glossary`), fill in the body, and
   commit in `memory/`. Let `memory add` own the frontmatter and `INDEX.md`.
 - **Route by durability.** Durable, reusable knowledge → `memory/`. Decisions
   specific to *this* piece of work stay in the conversation — `brief` distills
