@@ -72,10 +72,10 @@ Dispatch both with: the absolute worktree path, the **full plan text inlined**, 
 >    instead of pointing at it, or repeat a WHY already anchored at another call
 >    site. Over-commenting is a finding, not a courtesy — but so is a missing
 >    WHY for a non-obvious choice.
->    Then run `ceilings --strict <worktree>`. Every deliberate simplification the
->    diff introduces that has a known limit must carry a `ceiling:` marker naming
->    both the limit and an `upgrade when …` trigger. A ceiling with no trigger is
->    a finding; so is a corner cut with no marker at all.
+>    Then run `tradeoffs --strict <worktree>`. Every deliberate simplification
+>    the diff introduces that has a known limit must carry a `tradeoff:` marker
+>    naming both the limit and an `upgrade when …` trigger. A tradeoff with no
+>    trigger is a finding; so is a corner cut with no marker at all.
 > 5. **Fix anchoring** (bug-fix plans only) — when the diff guards or corrects a
 >    single call site, check whether sibling callers reach the same function
 >    unguarded. A fix anchored at one caller while others route through the same
