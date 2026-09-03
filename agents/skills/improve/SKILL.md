@@ -48,6 +48,7 @@ Map the territory before judging it:
 - Note conventions (style, naming, layout, error-handling, state management) and an exemplar file per pattern — plans tell the executor to match these.
 - **Ingest intent & design docs where present** — ADRs (`docs/adr*`, `docs/decisions/`), PRDs/specs, `CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`. Strictly additive. Carry them into Vet (an ADR'd tradeoff is by-design, not a finding), Direction (ground in stated intent), and plans (match documented vocabulary).
 - Check git signal (`git log --oneline -30`, churn hotspots) for what's active vs. frozen.
+- Run `ceilings <repo>` for the existing ceiling ledger — deliberate simplifications the repo already declares, with their limits and triggers. A ceiling whose trigger has now **fired** is a finding; one whose trigger has not is a *decision*, not debt, so don't re-report it. A ceiling with no trigger is a finding in its own right.
 
 Record recon facts in `WORKSPACE.md` as you go. If there's no working verification command, that's often finding #1 — "establish a verification baseline" precedes risky plans in the dependency order.
 
@@ -78,7 +79,7 @@ Say in the final report what was *not* audited. On a large monorepo even `deep` 
 
 ### Phase 3 — Vet, prioritize, confirm
 
-**Vet before presenting — subagents over-report.** For every finding that will make the table, open the cited code yourself. Expect three failure classes: **by-design behavior** reported as a bug (honoring `https_proxy` flagged as SSRF; an ADR'd tradeoff), **mis-attributed evidence** (right finding, wrong file/line), and **duplicates**. Downgrade, correct, or reject — and record rejections in `WORKSPACE.md`'s `## Plan set` "considered and rejected" notes so they aren't re-audited.
+**Vet before presenting — subagents over-report.** For every finding that will make the table, open the cited code yourself. Expect four failure classes: **by-design behavior** reported as a bug (honoring `https_proxy` flagged as SSRF; an ADR'd tradeoff), **mis-attributed evidence** (right finding, wrong file/line), **duplicates**, and **speculative** — a real observation whose fix builds capability nothing needs yet (an abstraction over one implementation, config for a value that never changes, a migration for a scale this service will not reach). Speculative findings are the ones that look most like good engineering, so hold them to the question *what breaks today if this stays as it is?* — no answer, no plan. Downgrade, correct, or reject — and record rejections in `WORKSPACE.md`'s `## Plan set` "considered and rejected" notes so they aren't re-audited.
 
 Present the vetted findings table, ordered by leverage (impact ÷ effort, weighted by confidence):
 
