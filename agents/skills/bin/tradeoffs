@@ -1,32 +1,32 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# ceilings — harvest `ceiling:` markers into a ledger.
+# tradeoffs — harvest `tradeoff:` markers into a ledger.
 #
-# A ceiling marker records a deliberate simplification that has a known limit,
+# A tradeoff marker records a deliberate simplification that has a known limit,
 # at the line that enacts it (see memory/knowledge/code-comments.md):
 #
-#   // ceiling: global lock; upgrade when per-account throughput matters
+#   // tradeoff: global lock; upgrade when per-account throughput matters
 #
 # The literal `upgrade when` is the trigger test — a marker without one is a
 # deferral with no way back, which is what rots. `--strict` exits non-zero on
 # those so a reviewer or CI can gate on it.
 #
-# Deterministic scan/parse/report only. Judgment — whether a ceiling is the
+# Deterministic scan/parse/report only. Judgment — whether a tradeoff is the
 # right call — stays with the agent reading the ledger.
 
 require "optparse"
 require "json"
 require "shellwords"
 
-module Ceilings
+module Tradeoffs
   # A comment prefix is required: it is what keeps code that merely has a field
-  # named `ceiling:` — or prose mentioning the convention — out of the ledger.
-  MARKER  = /(?:[#;%]|\/\/|\/\*|--)\s*ceiling:\s*(?<text>.+?)\s*(?:\*\/)?\s*$/
+  # named `tradeoff:` — or prose mentioning the convention — out of the ledger.
+  MARKER  = /(?:[#;%]|\/\/|\/\*|--)\s*tradeoff:\s*(?<text>.+?)\s*(?:\*\/)?\s*$/
   TRIGGER = /\bupgrade when\b\s*(?<trigger>.+)\z/i
   SKIP    = %w[node_modules vendor .git dist build target coverage].freeze
 
-  Marker = Struct.new(:file, :line, :ceiling, :trigger, keyword_init: true) do
+  Marker = Struct.new(:file, :line, :tradeoff, :trigger, keyword_init: true) do
     def trigger? = !trigger.to_s.strip.empty?
   end
 
@@ -39,10 +39,10 @@ module Ceilings
   def scan(path)
     lines =
       if system("git", "-C", path, "rev-parse", "--git-dir", out: File::NULL, err: File::NULL)
-        `git -C #{path.shellescape} grep --untracked -nIE 'ceiling:' 2>/dev/null`
+        `git -C #{path.shellescape} grep --untracked -nIE 'tradeoff:' 2>/dev/null`
       else
         excludes = SKIP.map { |d| "--exclude-dir=#{d}" }.join(" ")
-        `grep -rnIE #{excludes} 'ceiling:' #{path.shellescape} 2>/dev/null`
+        `grep -rnIE #{excludes} 'tradeoff:' #{path.shellescape} 2>/dev/null`
       end
     lines.each_line.filter_map { |l| parse(l) }
   end
@@ -55,7 +55,7 @@ module Ceilings
     t = TRIGGER.match(text)
     Marker.new(
       file: file, line: line.to_i,
-      ceiling: (t ? text[0...t.begin(0)] : text).strip.sub(/[;,.]\z/, ""),
+      tradeoff: (t ? text[0...t.begin(0)] : text).strip.sub(/[;,.]\z/, ""),
       trigger: t && t[:trigger].strip
     )
   end
@@ -64,7 +64,7 @@ module Ceilings
     markers.group_by(&:file).sort.each do |file, rows|
       puts file
       rows.sort_by(&:line).each do |m|
-        puts "  :#{m.line}  #{m.ceiling}"
+        puts "  :#{m.line}  #{m.tradeoff}"
         puts(m.trigger? ? "         upgrade when #{m.trigger}" : "         NO TRIGGER — states no way back")
       end
     end
@@ -75,22 +75,22 @@ path = "."
 format = :text
 strict = false
 OptionParser.new do |o|
-  o.banner = "Usage: ceilings [PATH] [--json] [--strict]"
-  o.separator "        harvest `ceiling:` markers; PATH defaults to ."
+  o.banner = "Usage: tradeoffs [PATH] [--json] [--strict]"
+  o.separator "        harvest `tradeoff:` markers; PATH defaults to ."
   o.on("--json", "machine-readable output") { format = :json }
   o.on("--strict", "exit 1 if any marker states no trigger") { strict = true }
 end.parse!(ARGV)
 path = ARGV.shift || path
 
-markers = Ceilings.scan(File.expand_path(path))
+markers = Tradeoffs.scan(File.expand_path(path))
 untriggered = markers.reject(&:trigger?)
 
 if format == :json
   puts JSON.pretty_generate(markers.map(&:to_h))
 elsif markers.empty?
-  puts "No ceiling markers. Clean ledger."
+  puts "No tradeoff markers. Clean ledger."
 else
-  Ceilings.render(markers)
+  Tradeoffs.render(markers)
   puts
   puts "#{markers.size} marker#{"s" unless markers.size == 1}, #{untriggered.size} with no trigger."
 end
