@@ -47,8 +47,23 @@ Dispatch both with: the absolute worktree path, the **full plan text inlined**, 
 > 1. **Conventions** — does it match the conventions the plan named (error
 >    handling, naming, layout) and the exemplar file it pointed at? Does it look
 >    like the rest of the codebase?
-> 2. **Code health** — duplication, dead code, leaked complexity, obvious
->    inefficiency, missing error handling introduced by this diff.
+> 2. **Code health** — hunt what the diff adds that the repo did not need, and
+>    name the replacement. One line per finding, tagged:
+>    - `delete:` dead code, unused flexibility, a speculative feature. Nothing
+>      replaces it.
+>    - `reuse:` re-implements a helper, util, type, or pattern that already lives
+>      in this repo. Name the path.
+>    - `stdlib:` hand-rolls something the language ships. Name the function.
+>    - `native:` code or a dependency doing what the platform already does. Name
+>      the feature.
+>    - `yagni:` an abstraction with one implementation, config nobody sets, a
+>      layer with one caller.
+>    - `shrink:` same logic, fewer lines. Show the shorter form.
+>
+>    Format: `<file>:L<line>: <tag> <what>. <replacement>.` Also flag missing
+>    error handling the diff introduces. If the diff is already lean, write
+>    `Lean already.` and move on — padding this section to look thorough is
+>    itself a finding against you.
 > 3. **Comment discipline** — audit every comment the diff adds against
 >    `~/Code/memory/knowledge/code-comments.md`. Flag comments that restate what
 >    the code already says, narrate the task (plan/step/PR/reviewer references,
@@ -57,6 +72,16 @@ Dispatch both with: the absolute worktree path, the **full plan text inlined**, 
 >    instead of pointing at it, or repeat a WHY already anchored at another call
 >    site. Over-commenting is a finding, not a courtesy — but so is a missing
 >    WHY for a non-obvious choice.
+>    Then run `ceilings --strict <worktree>`. Every deliberate simplification the
+>    diff introduces that has a known limit must carry a `ceiling:` marker naming
+>    both the limit and an `upgrade when …` trigger. A ceiling with no trigger is
+>    a finding; so is a corner cut with no marker at all.
+> 5. **Fix anchoring** (bug-fix plans only) — when the diff guards or corrects a
+>    single call site, check whether sibling callers reach the same function
+>    unguarded. A fix anchored at one caller while others route through the same
+>    code path is a finding: name the siblings. The inverse is also a finding — a
+>    guard pushed into a shared function when only one caller wanted it changes
+>    behavior the plan never asked for.
 > 4. **Test quality** — audit the new/changed tests against
 >    `~/Code/memory/knowledge/testing-discipline.md`. Flag tests that assert
 >    nothing, mock internal collaborators, assert data *shape* instead of

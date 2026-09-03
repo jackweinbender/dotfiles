@@ -121,7 +121,7 @@ A workspace may optionally add its own `TODOS.md` for workspace-scoped followups
 
 ## Scripts
 
-The orchestration CLIs (`memory`, `workspace`) are on `PATH` — call them as bare commands. They live in the `agents` dotfiles topic's `skills/bin/` and run from there, not from `~/Code`.
+The orchestration CLIs (`memory`, `workspace`, `ceilings`) are on `PATH` — call them as bare commands. They live in the `agents` dotfiles topic's `skills/bin/` and run from there, not from `~/Code`.
 
 ## Skills
 

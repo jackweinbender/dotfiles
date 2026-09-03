@@ -72,7 +72,9 @@ Spawn **one** subagent (`general-purpose`, the chosen model, no `isolation` — 
 > comment, keep only the non-obvious WHYs (rationale, gotchas, invariants,
 > deliberate non-actions). Leave no task narrative in the source — no reference
 > to this plan, its steps, the PR, or what the code used to do; that belongs in
-> your commit message and your report.
+> your commit message and your report. Where you deliberately build the cheap
+> version of something and know where it stops working, mark that line
+> `ceiling: <the limit>; upgrade when <trigger>` — both parts, per the same doc.
 >
 > Cadence: typecheck and run the relevant single test file frequently as you
 > go (not just at the end); run the full suite once before reporting. If the

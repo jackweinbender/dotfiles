@@ -44,6 +44,7 @@ Understand the repo enough to specify the task honestly:
 - Find the conventions the work must match (error handling, naming, folder layout, test structure) and the **exemplar file** a plan should point the executor at.
 - Read intent/design docs where present (`README`, `AGENTS.md`/`CLAUDE.md`, ADRs, `CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`) so the plan honors decided tradeoffs and documented vocabulary.
 - Open every file you will cite in a plan. Excerpts in plans come from your own reads, never secondhand.
+- **Search before you specify new code.** Two questions, in order: does this need to exist at all, and does it already exist here? Re-implementing a helper, util, type, or pattern that lives a few files over is the most common way a plan adds code the repo did not need. Search for it, then record the answer in the plan — either what it reuses (with the path) or that you searched and found nothing. A plan that never states which it is has not answered the question.
 
 **Resolve ambiguity from the codebase first.** Only genuinely unresolvable ambiguity becomes a question to the user — asked one at a time, each with a recommended answer. Don't interrogate the user for what the code already answers.
 

@@ -197,6 +197,35 @@ fix second.
 
 ## Phase 5: Fix and lock it down
 
+### Sweep the callers before you choose where the fix goes
+
+A report names a **symptom**, and the symptom arrives through one path. Before
+editing, enumerate every caller of the function you are about to change —
+`rg`, an LSP reference search, or for PHP the authoritative
+`psalm --find-references-to` sweep in
+[[vimeo-cookie-usage-map-method]] (which catches dynamic-name construction that
+grep misses).
+
+Then state where the fix belongs:
+
+- **All callers want the guard** → put it in the shared function. One guard there
+  is a *smaller* diff than one per caller, and it is the only version that fixes
+  the siblings the ticket never mentioned.
+- **Only this caller wants it** → say why the others legitimately differ, and fix
+  the one path. An unexplained one-site fix is the failure mode: it leaves every
+  sibling caller broken and closes the ticket anyway.
+
+Two traps the store already records: a call-site argument is not evidence the
+behavior ever shipped ([[unshipped-intent-call-site-args]]), so verify the
+plumbing honored it before framing the fix as "restoring intent"; and deleting a
+method can transitively orphan its own siblings
+([[psalm-possiblyunusedmethod-transitive-orphan]]).
+
+**Done when** the caller set is enumerated and the anchor for the fix is named
+with a reason.
+
+### Write the test, then the fix
+
 Write the regression test **before the fix**, when a **correct seam** exists for it.
 
 A correct seam exercises the real bug pattern as it occurs at the call site. A seam too
