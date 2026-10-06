@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# query — read-only passthrough wrapper for common inspection tools (bq, kubectl, gcloud logging).
+# query — read-only passthrough wrapper for common inspection tools (bq, kubectl, gcloud logging/dns, aws route53).
 #
 # Validates the invoked tool+subcommand against an explicit allowlist of read-only
 # prefixes, then execs the real binary directly (no shell). Args are never passed
@@ -19,6 +19,47 @@ module Query
     %w[kubectl describe],
     %w[kubectl top],
     %w[gcloud logging read],
+    %w[gcloud auth list],
+    %w[gcloud config list],
+    %w[gcloud organizations list],
+    %w[gcloud projects list],
+    %w[gcloud projects describe],
+    %w[gcloud asset search-all-resources],
+    %w[gcloud dns managed-zones list],
+    %w[gcloud dns managed-zones describe],
+    %w[gcloud dns record-sets list],
+    %w[gcloud dns record-sets describe],
+    %w[gcloud dns policies list],
+    %w[gcloud dns policies describe],
+    %w[gcloud dns response-policies list],
+    %w[gcloud dns response-policies describe],
+    %w[gcloud dns response-policies rules list],
+    %w[gcloud compute networks list],
+    %w[gcloud domains registrations list],
+    %w[gcloud domains registrations describe],
+    %w[aws sts get-caller-identity],
+    %w[aws configure list-profiles],
+    %w[aws organizations list-accounts],
+    %w[aws organizations describe-organization],
+    %w[aws route53 list-hosted-zones],
+    %w[aws route53 list-hosted-zones-by-name],
+    %w[aws route53 list-hosted-zones-by-vpc],
+    %w[aws route53 get-hosted-zone],
+    %w[aws route53 list-resource-record-sets],
+    %w[aws route53 list-vpc-association-authorizations],
+    %w[aws route53 get-dnssec],
+    %w[aws route53 list-query-logging-configs],
+    %w[aws route53 list-health-checks],
+    %w[aws route53 get-health-check],
+    %w[aws route53 list-traffic-policies],
+    %w[aws route53 list-traffic-policy-instances],
+    %w[aws route53 list-tags-for-resource],
+    %w[aws route53domains list-domains],
+    %w[aws route53domains get-domain-detail],
+    %w[aws route53resolver list-resolver-endpoints],
+    %w[aws route53resolver list-resolver-rules],
+    %w[aws route53resolver list-resolver-rule-associations],
+    %w[aws route53resolver list-resolver-query-log-configs],
   ].freeze
 
   class Error < StandardError
