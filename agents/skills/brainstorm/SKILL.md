@@ -59,7 +59,11 @@ baked into how the problem was stated. Deploy these moves, not vague creativity:
   for one that does.
 - **Ground options in reality.** Read the relevant code, config, and docs (and
   memory, below) so options are feasible, not fantasy — but stay read-only; you
-  investigate to inform divergence, you don't edit.
+  investigate to inform divergence, you don't edit. When an option leans on a
+  cited precedent ("this already works elsewhere"), check that precedent's
+  *history*, not just its current state — `git log`/`git show` for whether it
+  was ever tried, broke, and got reverted. A precedent's current files don't
+  show a failure that was already fixed by reverting.
 - **Antagonism is constructive.** Every challenge to the framing comes with at
   least one direction it *opens* — you're clearing ground for better ideas, not
   scoring points. Negation without an alternative is just obstruction.
