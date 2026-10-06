@@ -1,6 +1,6 @@
 ---
 name: query
-description: Run a read-only inspection command (bq, kubectl logs/get/describe/top, gcloud logging read, gcloud dns/projects/asset lists and describes, aws route53/route53domains/route53resolver lists and gets, aws sts get-caller-identity) through a validated passthrough wrapper. Use instead of calling bq/kubectl/gcloud directly when you want the command to run without a permission prompt — it only executes if the tool+subcommand matches an explicit read-only allowlist.
+description: Run a read-only inspection command (bq, kubectl logs/get/describe/top, gcloud logging read, gcloud dns/projects/asset lists and describes, gcloud certificate and cluster lists, aws route53/route53domains/route53resolver lists and gets, aws acm/iam certificate lists, aws sts get-caller-identity) through a validated passthrough wrapper. Use instead of calling bq/kubectl/gcloud directly when you want the command to run without a permission prompt — it only executes if the tool+subcommand matches an explicit read-only allowlist.
 ---
 
 # query
@@ -38,8 +38,10 @@ query: kubectl delete pod my-pod — does not match an allowed read-only prefix 
 - `gcloud logging read`
 - `gcloud auth list`, `gcloud config list`, `gcloud organizations list`, `gcloud projects list`, `gcloud projects describe`, `gcloud asset search-all-resources`
 - `gcloud dns` `managed-zones list|describe`, `record-sets list|describe`, `policies list|describe`, `response-policies list|describe`, `response-policies rules list`
-- `gcloud compute networks list`, `gcloud domains registrations list|describe`
+- `gcloud compute networks list`, `gcloud compute ssl-certificates list`, `gcloud compute target-https-proxies list`, `gcloud domains registrations list|describe`
+- `gcloud certificate-manager certificates list`, `gcloud certificate-manager maps list`, `gcloud container clusters list`
 - `aws sts get-caller-identity`, `aws configure list-profiles`, `aws organizations list-accounts`, `aws organizations describe-organization`
+- `aws acm list-certificates`, `aws acm describe-certificate`, `aws iam list-server-certificates`
 - `aws route53` `list-hosted-zones`, `list-hosted-zones-by-name`, `list-hosted-zones-by-vpc`, `get-hosted-zone`, `list-resource-record-sets`, `list-vpc-association-authorizations`, `get-dnssec`, `list-query-logging-configs`, `list-health-checks`, `get-health-check`, `list-traffic-policies`, `list-traffic-policy-instances`, `list-tags-for-resource`
 - `aws route53domains list-domains`, `aws route53domains get-domain-detail` (the Route 53 Domains API answers only in `--region us-east-1`)
 - `aws route53resolver` `list-resolver-endpoints`, `list-resolver-rules`, `list-resolver-rule-associations`, `list-resolver-query-log-configs`
