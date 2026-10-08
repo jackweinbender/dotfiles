@@ -35,7 +35,7 @@ memory add \
 This writes `~/Code/memory/knowledge/<slug>.md` with correct frontmatter and registers its `INDEX.md` line. Then **fill in the body** (Edit/Write — that's the knowledge, your judgment) and **commit in `memory/`** (commits are by hand, so you control the message and grouping).
 
 - `--type` ∈ `reference` (a fact / how-things-are) · `procedure` (a how-to) · `convention` (a normative standard) · `pattern` (general/transferable) · `identity` (a person) · `glossary` (see below). One fact per note; link related notes with `[[slug]]` wikilinks.
-- Keep `--summary` to one recall-cue line — it becomes the `INDEX.md` hook.
+- `--summary` becomes the `INDEX.md` hook, which every recall reads in full. Write it as a **pointer** (≤150 chars, enforced): what the note is and when to reach for it, trigger words first. The detail belongs in the body.
 
 **Do not** record here: episodic "what I did" narratives (→ `WORKSPACE.md`, then `memory/log/`), always-applied behavioral rules (→ the relevant `AGENTS.md`), or general knowledge the model already has. The store is for *local, durable, hard-won* knowledge.
 
