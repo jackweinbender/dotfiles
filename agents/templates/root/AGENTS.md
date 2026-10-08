@@ -104,8 +104,8 @@ The shared memory store lives at `~/Code/memory/` — git-tracked markdown, edit
 
 The contract:
 
-- **Recall.** Read `~/Code/memory/knowledge/INDEX.md` (one line per note), then the matching note(s) — before re-deriving something that smells already-solved. For full-text search, `rg <term> ~/Code/memory/knowledge/`. (The `memory` skill documents this.)
-- **Record.** Learned something durable? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity|glossary`), then fill in the body and commit in `memory/`. It keeps `INDEX.md` in sync.
+- **Recall.** `memory list --topic a,b` (topics are listed in the `memory` skill; the current repo's notes are added automatically), then read the matching note(s) — before re-deriving something that smells already-solved. Fallback: `rg <term> ~/Code/memory/knowledge/`, then `knowledge/INDEX.md` (one line per note). (The `memory` skill documents this.)
+- **Record.** Learned something durable? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity|glossary`); `--tags` must include a `topic/<name>` (or `topic/unfiled`) plus `repo/<org>/<repo>` where it applies, then fill in the body and commit in `memory/`. It keeps `INDEX.md` in sync.
 - **Routing.** The store is durable *knowledge*; recall targets `knowledge/`. Always-applied behavioral rules belong in the relevant `AGENTS.md`; task-scoped notes in `WORKSPACE.md`; completed-work narratives are episodic → `log/`.
 - **No tool-private stores.** Don't record durable knowledge in tool-specific memory features (e.g. Claude Code auto-memory) — this store is the single source of truth.
 
