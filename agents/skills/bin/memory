@@ -28,6 +28,8 @@ module Memory
   KNOWN_TYPES = %w[reference procedure convention pattern identity glossary].freeze
   SLUG_RE     = /\A[a-z0-9][a-z0-9-]*\z/
   INDEX_LINE  = /\A- \[(?<title>.+)\]\((?<file>[^)]+\.md)\)(?: — (?<hook>.*))?\z/
+  # Every recall reads every hook, so hook length is paid on every lookup.
+  HOOK_MAX    = 150
 
   INDEX_HEADER = <<~HEADER
     # Memory index
@@ -169,6 +171,9 @@ module Memory
       raise UsageError, "slug must match #{SLUG_RE.inspect}: #{@slug.inspect}" unless @slug&.match?(SLUG_RE)
       raise UsageError, "title is required" if @title.to_s.strip.empty?
       raise UsageError, "summary is required (the INDEX hook)" if @summary.to_s.strip.empty?
+      if @summary.length > HOOK_MAX
+        raise UsageError, "summary is #{@summary.length} chars; max #{HOOK_MAX} (it's a pointer, not a digest)"
+      end
       raise UsageError, "at least one tag is required" if @tags.empty?
       warn "[warn] unknown type #{@type.inspect}; known: #{KNOWN_TYPES.join(", ")}" unless KNOWN_TYPES.include?(@type)
     end
@@ -215,6 +220,10 @@ module Memory
       end
 
       (indexed.keys - present).each { |slug| errors << "INDEX.md: orphan entry for missing note #{slug}.md" }
+      indexed.each do |slug, e|
+        next unless e[:hook].length > HOOK_MAX
+        warnings << "INDEX.md: #{slug} hook is #{e[:hook].length} chars (max #{HOOK_MAX})"
+      end
 
       warnings.each { |w| warn "[warn] #{w}" }
       unless errors.empty?
