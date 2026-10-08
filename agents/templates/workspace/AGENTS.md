@@ -23,6 +23,6 @@ This is an independent workspace under `~/Code/workspaces/`. It is self-containe
 
 Durable, reusable knowledge — facts, procedures, conventions, patterns — lives in the shared memory store at `~/Code/memory/knowledge/` (git-tracked markdown, shared by all agents and tools).
 
-- **Recall.** Read `~/Code/memory/knowledge/INDEX.md`, then the matching note(s) — before re-deriving something that smells already-solved. Full-text: `rg <term> ~/Code/memory/knowledge/`.
-- **Record.** Learned something durable beyond this task? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity|glossary`), fill in the body, commit in `memory/`.
+- **Recall.** `memory list --topic a,b` (topics are listed in the `memory` skill; your repo's notes are added automatically), then read the matching note(s) — before re-deriving something that smells already-solved. Fallback: `rg <term> ~/Code/memory/knowledge/`, then `INDEX.md`.
+- **Record.** Learned something durable beyond this task? `memory add --slug … --type … --tags … --title … --summary …` (type ∈ `reference|procedure|convention|pattern|identity|glossary`); `--tags` must include a `topic/<name>` (or `topic/unfiled`) plus `repo/<org>/<repo>` where it applies, fill in the body, commit in `memory/`.
 - **Routing.** The store is knowledge only. Task-scoped notes go in `WORKSPACE.md`; behavioral rules belong in `AGENTS.md` files; don't record durable knowledge in tool-private memory features.
