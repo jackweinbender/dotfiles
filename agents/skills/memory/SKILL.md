@@ -4,7 +4,7 @@ description: >-
   The shared, tool-agnostic memory store at ~/Code/memory/knowledge/ — durable markdown notes (facts, procedures, conventions, patterns, gotchas, per-repo glossaries).
   RECALL before re-deriving something already solved (`memory list --topic …`, then read the matching note). RECORD durable knowledge with `memory add`.
   Use at the START of any task that smells already-handled, or when you learn something worth keeping.
-  Topics — none yet (read INDEX.md).
+  Topics — agents, auth, ci, cloudflare, code-review, config, consent, cookies, deploys, devsite, edge, git, grafana, kubernetes, local-dev, logging, metrics, networking, personal-projects, php, player, practices, quickset, security, terraform, testing.
 ---
 
 # memory
