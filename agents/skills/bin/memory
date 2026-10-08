@@ -1,40 +1,63 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# memory — write/maintenance for the shared, tool-agnostic memory store.
+# memory — the deterministic half of the shared, tool-agnostic memory store.
 #
-# RECALL is deliberately NOT here: an agent with grep + read + INDEX.md already
-# does progressive disclosure better than any fixed scorer (see the skill). This
-# CLI owns only the *deterministic* half — the procedural work that's easy to
+# Judgment stays with the agent (which topics a lookup needs, which notes to
+# read, what a note says). This CLI owns the procedural work that's easy to
 # botch by hand:
 #
-#   add    scaffold a schema-correct note (frontmatter + today's date) and
-#          register it in INDEX.md
-#   index  reconcile INDEX.md with the notes on disk — add lines for new notes,
-#          drop orphans, re-sort. Preserves curated hook/title text.
-#   lint   validate frontmatter schema, INDEX sync, and wikilink resolution.
+#   add     scaffold a schema-correct note (frontmatter + today's date),
+#           validate its facets, and register it in INDEX.md
+#   list    filter notes by facet: topics (curated) and repos (factual,
+#           auto-detected from the current checkout). Filtering, not scoring.
+#   topics  print the curated taxonomy; --sync copies its names into the
+#           `memory` skill description
+#   index   reconcile INDEX.md with the notes on disk — add lines for new
+#           notes, drop orphans, re-sort, regenerate facets. Preserves curated
+#           hook/title text.
+#   lint    validate frontmatter, facets, taxonomy bounds, INDEX sync,
+#           skill-description sync, and wikilink resolution.
 #
-# Structure-agnostic: one CORPUS_DIR constant points at the recall corpus
-# (the knowledge notes). Episodic logs live in a sibling dir, out of scope here.
+# Facets are nested tags in `tags:` — `topic/<name>` (judgment; vocabulary in
+# TOPICS.md, curated by the `librarian` skill) and `repo/<org>/<repo>`
+# (factual; vocabulary is ~/Code/github.com). Other tags are free-form.
 
 require "optparse"
 require "yaml"
 require "date"
+require "open3"
 
 module Memory
-  CORPUS_DIR  = File.expand_path("~/Code/memory/knowledge")
-  INDEX_PATH  = File.join(CORPUS_DIR, "INDEX.md")
+  CORPUS_DIR  = File.expand_path(ENV.fetch("MEMORY_CORPUS_DIR", "~/Code/memory/knowledge"))
   INDEX_FILE  = "INDEX.md"
+  TOPICS_FILE = "TOPICS.md"
+  INDEX_PATH  = File.join(CORPUS_DIR, INDEX_FILE)
+  TOPICS_PATH = File.join(CORPUS_DIR, TOPICS_FILE)
+  SKILL_PATH  = File.expand_path(ENV.fetch("MEMORY_SKILL_PATH", File.join(__dir__, "..", "memory", "SKILL.md")))
+  GITHUB_DIR  = File.expand_path(ENV.fetch("MEMORY_GITHUB_DIR", "~/Code/github.com"))
   KNOWN_TYPES = %w[reference procedure convention pattern identity glossary].freeze
   SLUG_RE     = /\A[a-z0-9][a-z0-9-]*\z/
-  INDEX_LINE  = /\A- \[(?<title>.+)\]\((?<file>[^)]+\.md)\)(?: — (?<hook>.*))?\z/
+  TOPIC_RE    = /\A[a-z0-9][a-z0-9-]*\z/
+  REPO_RE     = %r{\A[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\z}
+  FACETS_RE   = %r{(?:topic|repo)/\S+(?: (?:topic|repo)/\S+)*}
+  INDEX_LINE  = /\A- \[(?<title>.+)\]\((?<file>[^)]+\.md)\)(?: — (?<hook>.*?))?(?: · (?<facets>#{FACETS_RE}))?\z/
+  UNFILED     = "unfiled"
   # Every recall reads every hook, so hook length is paid on every lookup.
   HOOK_MAX    = 150
+
+  # Taxonomy bounds scale with note count N: a two-level index is cheapest
+  # near √N buckets. The multipliers are unvalidated starting guesses.
+  TOPIC_COUNT_MIN_K = 1.5
+  TOPIC_COUNT_MAX_K = 3.0
+  TOPIC_SIZE_MIN    = 3
+  TOPIC_SIZE_MAX_K  = 2.0
+  UNFILED_DUE       = 5
 
   INDEX_HEADER = <<~HEADER
     # Memory index
 
-    One line per note — scan this, then Read the note(s) that match the task. Maintained by `memory index` (adds new notes, drops deleted ones, re-sorts); curate the hook text by editing the line. Every note in `memory/` (except this file) has exactly one line here.
+    One line per note — scan this, then Read the note(s) that match the task. Maintained by `memory index` (adds new notes, drops deleted ones, re-sorts, regenerates the trailing `· topic/… repo/…` facets from frontmatter); curate the title and hook by editing the line. Every note in `memory/` (except this file and TOPICS.md) has exactly one line here.
   HEADER
 
   class Error < StandardError
@@ -72,6 +95,9 @@ module Memory
     def tags = Array(meta["tags"]).map(&:to_s)
     def created = meta["created"]&.to_s
     def summary = meta["summary"]&.to_s
+    def topics = Facets.topics(tags)
+    def repos = Facets.repos(tags)
+    def facets = Facets.of(tags)
 
     def title = @title ||= (body[/^#\s+(.+)$/, 1]&.strip) || slug
 
@@ -88,13 +114,113 @@ module Memory
     def wikilinks = body.scan(/\[\[([^\]|#]+)/).flatten.map { |s| s.strip }
   end
 
+  module Facets
+    module_function
+
+    def topics(tags) = tags.filter_map { |t| t.delete_prefix("topic/") if t.start_with?("topic/") }
+    def repos(tags)  = tags.filter_map { |t| t.delete_prefix("repo/") if t.start_with?("repo/") }
+    def of(tags) = topics(tags).sort.map { |t| "topic/#{t}" } + repos(tags).sort.map { |r| "repo/#{r}" }
+
+    # Facet problems in a tag list, as messages. Topic vocabulary is enforced
+    # only once TOPICS.md exists (before the first librarian pass, nothing is filed).
+    def problems(tags)
+      out = []
+      topics(tags).reject { |t| t.match?(TOPIC_RE) }.each { |t| out << "malformed topic tag topic/#{t}" }
+      repos(tags).reject { |r| r.match?(REPO_RE) }.each { |r| out << "malformed repo tag repo/#{r} (want repo/<org>/<repo>)" }
+      if Topics.exist?
+        ts = topics(tags)
+        out << "no topic/* tag (use topic/#{UNFILED} if none fits)" if ts.empty?
+        unknown = ts - Topics.names - [UNFILED]
+        out << "unknown topic(s) #{unknown.join(", ")} (not in #{TOPICS_FILE})" unless unknown.empty?
+      end
+      out
+    end
+  end
+
+  # TOPICS.md — the curated `topic/*` vocabulary, one `- \`name\` — description` line each.
+  module Topics
+    module_function
+
+    LINE = /\A- `(?<name>[a-z0-9][a-z0-9-]*)` — (?<desc>.+)\z/
+
+    def exist? = File.exist?(TOPICS_PATH)
+
+    def all
+      return {} unless exist?
+      File.readlines(TOPICS_PATH).each_with_object({}) do |line, acc|
+        m = LINE.match(line.rstrip)
+        acc[m[:name]] = m[:desc] if m
+      end
+    end
+
+    def names = all.keys
+  end
+
+  # The topic-names line in the `memory` skill description, kept in sync with TOPICS.md.
+  module Skill
+    module_function
+
+    LINE = /^(?<indent>[ \t]*)Topics — (?<list>.*)$/
+    NONE = "none yet (read INDEX.md)."
+
+    def topics_line
+      return nil unless File.exist?(SKILL_PATH)
+      m = File.read(SKILL_PATH).match(LINE)
+      m && m[:list]
+    end
+
+    def render(names) = names.empty? ? NONE : "#{names.join(", ")}."
+
+    def sync!(names)
+      raise UsageError, "no skill at #{SKILL_PATH}" unless File.exist?(SKILL_PATH)
+      text = File.read(SKILL_PATH)
+      raise UsageError, "no 'Topics — …' line in #{SKILL_PATH}" unless text.match?(LINE)
+      File.write(SKILL_PATH, text.sub(LINE) { "#{$~[:indent]}Topics — #{render(names)}" })
+    end
+  end
+
+  # Which repo(s) the caller is working in, as `<org>/<repo>`.
+  module Repo
+    module_function
+
+    # git@host:org/repo.git (incl. host aliases), ssh://…/org/repo, https://host/org/repo.
+    # A `url.<x>.insteadOf https://github.com/` rewrite yields git@github.com:/org/repo.
+    def parse_url(url)
+      path =
+        case url.to_s.strip
+        when %r{\A[a-z][a-z0-9+.-]*://[^/]+/(?<p>.+)\z}i then $~[:p]
+        when %r{\A[^@/\s]+@[^:/\s]+:(?<p>.+)\z}           then $~[:p]
+        end
+      return nil unless path
+      path = path.delete_prefix("/").chomp("/").delete_suffix(".git")
+      path.match?(REPO_RE) ? path : nil
+    end
+
+    def git(dir, *args)
+      out, status = Open3.capture2e("git", "-C", dir, *args)
+      status.success? ? out.strip : nil
+    rescue SystemCallError
+      nil
+    end
+
+    def origin(dir) = parse_url(git(dir, "remote", "get-url", "origin"))
+
+    # Inside a checkout: its origin. At a workspace root: every repo under
+    # .worktrees/<org>/<repo>-<branch>/. Anywhere else: none.
+    def detect(dir = Dir.pwd)
+      return [origin(dir)].compact if git(dir, "rev-parse", "--show-toplevel")
+      Dir.glob(File.join(dir, ".worktrees", "*", "*")).select { |d| File.directory?(d) }
+        .filter_map { |d| origin(d) }.uniq.sort
+    end
+  end
+
   module Corpus
     module_function
 
     def notes
       return [] unless Dir.exist?(CORPUS_DIR)
       Dir.glob(File.join(CORPUS_DIR, "**", "*.md"))
-        .reject { |p| File.basename(p) == INDEX_FILE }
+        .reject { |p| [INDEX_FILE, TOPICS_FILE].include?(File.basename(p)) }
         .sort
         .map { |p| Note.new(p) }
     end
@@ -112,8 +238,14 @@ module Memory
       end
     end
 
+    def line(slug:, title:, hook:, facets:)
+      hook = hook.to_s.empty? ? "" : " — #{hook}"
+      tail = facets.empty? ? "" : " · #{facets.join(" ")}"
+      "- [#{title}](#{slug}.md)#{hook}#{tail}"
+    end
+
     # Reconcile INDEX.md with notes on disk. `overrides` is { slug => {title:, hook:} }
-    # for freshly-added notes. Returns { added:, dropped:, written: }.
+    # for freshly-added notes. Returns { added:, dropped:, lines: }.
     def reconcile(overrides: {}, write: true)
       existing = index_entries
       present  = notes.to_h { |n| [n.slug, n] }
@@ -128,19 +260,51 @@ module Memory
             added << slug
             { title: note.title, hook: note.summary || note.first_prose }
           end
-        { slug: slug, title: entry[:title], hook: entry[:hook].to_s }
+        { slug: slug, title: entry[:title], hook: entry[:hook].to_s, facets: note.facets }
       end
       # Sort by display title (case-insensitive) to match the curated convention.
-      lines = entries.sort_by { |e| e[:title].downcase }.map do |e|
-        hook = e[:hook].empty? ? "" : " — #{e[:hook]}"
-        "- [#{e[:title]}](#{e[:slug]}.md)#{hook}"
-      end
+      lines = entries.sort_by { |e| e[:title].downcase }.map { |e| line(**e) }
       dropped = existing.keys - present.keys
 
       if write
         File.write(INDEX_PATH, "#{INDEX_HEADER}\n#{lines.join("\n")}\n")
       end
       { added: added, dropped: dropped, lines: lines }
+    end
+  end
+
+  # list: filter notes by facet. Topic lookups also return unfiled notes, so a
+  # note nobody could place is never unreachable by routing.
+  class Lister
+    def initialize(topics: [], repos: [], all: false)
+      @topics = topics
+      @repos  = repos
+      @all    = all
+    end
+
+    def run
+      if !@all && @topics.empty? && @repos.empty?
+        raise UsageError, "pass --topic and/or --repo (none detected here), or --all"
+      end
+      if Topics.exist?
+        unknown = @topics - Topics.names - [UNFILED]
+        raise UsageError, "unknown topic(s) #{unknown.join(", ")}; known: #{Topics.names.join(", ")}" unless unknown.empty?
+      end
+
+      entries = Corpus.index_entries
+      Corpus.notes.select { |n| match?(n) }.map do |n|
+        e = entries[n.slug] || { title: n.title, hook: n.summary || n.first_prose }
+        Corpus.line(slug: n.slug, title: e[:title], hook: e[:hook], facets: n.facets)
+      end.sort_by(&:downcase)
+    end
+
+    private
+
+    def match?(note)
+      return true if @all
+      return true if note.topics.intersect?(@topics)
+      return true if note.repos.intersect?(@repos)
+      @topics.any? && note.topics.include?(UNFILED)
     end
   end
 
@@ -175,6 +339,8 @@ module Memory
         raise UsageError, "summary is #{@summary.length} chars; max #{HOOK_MAX} (it's a pointer, not a digest)"
       end
       raise UsageError, "at least one tag is required" if @tags.empty?
+      problems = Facets.problems(@tags)
+      raise UsageError, problems.join("; ") unless problems.empty?
       warn "[warn] unknown type #{@type.inspect}; known: #{KNOWN_TYPES.join(", ")}" unless KNOWN_TYPES.include?(@type)
     end
 
@@ -198,10 +364,11 @@ module Memory
     def run
       errors = []
       warnings = []
-      present = Corpus.slugs
+      notes = Corpus.notes
+      present = notes.map(&:slug)
       indexed = Corpus.index_entries
 
-      Corpus.notes.each do |n|
+      notes.each do |n|
         loc = "#{n.slug}.md"
         errors   << "#{loc}: missing `type`"    if n.type.to_s.empty?
         errors   << "#{loc}: missing `tags`"    if n.tags.empty?
@@ -217,6 +384,12 @@ module Memory
         n.wikilinks.each do |w|
           warnings << "#{loc}: dangling [[#{w}]]" unless present.include?(w)
         end
+        Facets.problems(n.tags).each { |p| errors << "#{loc}: #{p}" }
+        if File.directory?(GITHUB_DIR)
+          n.repos.each do |r|
+            warnings << "#{loc}: repo/#{r} not cloned under #{GITHUB_DIR}" unless File.directory?(File.join(GITHUB_DIR, r))
+          end
+        end
       end
 
       (indexed.keys - present).each { |slug| errors << "INDEX.md: orphan entry for missing note #{slug}.md" }
@@ -224,6 +397,12 @@ module Memory
         next unless e[:hook].length > HOOK_MAX
         warnings << "INDEX.md: #{slug} hook is #{e[:hook].length} chars (max #{HOOK_MAX})"
       end
+      if File.exist?(INDEX_PATH) && errors.none? { |e| e.start_with?("INDEX.md") || e.end_with?("not in INDEX.md") }
+        current = File.readlines(INDEX_PATH, chomp: true).grep(/\A- \[/)
+        errors << "INDEX.md: out of date (facets or order); run `memory index`" if current != Corpus.reconcile(write: false)[:lines]
+      end
+
+      taxonomy(notes, errors, warnings) if Topics.exist?
 
       warnings.each { |w| warn "[warn] #{w}" }
       unless errors.empty?
@@ -231,6 +410,38 @@ module Memory
         raise LintError, "#{errors.size} error(s), #{warnings.size} warning(s)"
       end
       [present.size, warnings.size]
+    end
+
+    private
+
+    def taxonomy(notes, errors, warnings)
+      names = Topics.names
+      n = notes.size
+      lo = (TOPIC_COUNT_MIN_K * Math.sqrt(n)).round
+      hi = (TOPIC_COUNT_MAX_K * Math.sqrt(n)).round
+      unless (lo..hi).cover?(names.size)
+        warnings << "librarian pass due: #{names.size} topics; want #{lo}–#{hi} for #{n} notes"
+      end
+
+      counts = names.to_h { |t| [t, notes.count { |note| note.topics.include?(t) }] }
+      unless names.empty?
+        max = (TOPIC_SIZE_MAX_K * counts.values.sum / names.size.to_f).round
+        counts.each do |t, c|
+          warnings << "librarian pass due: topic/#{t} has #{c} notes (min #{TOPIC_SIZE_MIN})" if c < TOPIC_SIZE_MIN
+          warnings << "librarian pass due: topic/#{t} has #{c} notes (max #{max})" if c > max
+        end
+      end
+
+      unfiled = notes.count { |note| note.topics.include?(UNFILED) }
+      warnings << "librarian pass due: #{unfiled} unfiled notes" if unfiled >= UNFILED_DUE
+
+      if File.exist?(SKILL_PATH)
+        want = Skill.render(names)
+        have = Skill.topics_line
+        errors << "memory skill: topics line out of sync with #{TOPICS_FILE}; run `memory topics --sync`" if have != want
+      else
+        warnings << "memory skill not found at #{SKILL_PATH}; skipped topics-line sync check"
+      end
     end
   end
 end
@@ -241,6 +452,29 @@ class Application
     puts "Created #{path}"
     puts "Registered in #{Memory::INDEX_PATH}"
     puts "Next: fill in the body, then commit in memory/."
+  end
+
+  def list(topics:, repos:, all:)
+    lines = Memory::Lister.new(topics: topics, repos: repos, all: all).run
+    puts lines
+    scope = [("topics: #{topics.join(", ")}" unless topics.empty?), ("repos: #{repos.join(", ")}" unless repos.empty?)].compact
+    warn "#{lines.size} note(s)#{scope.empty? ? "" : " (#{scope.join("; ")})"}." \
+         "#{lines.empty? ? " Fall back to rg, then INDEX.md." : ""}"
+  end
+
+  def topics(sync: false)
+    raise Memory::UsageError, "no #{Memory::TOPICS_FILE} yet — run the librarian to bootstrap the taxonomy" unless Memory::Topics.exist?
+    if sync
+      Memory::Skill.sync!(Memory::Topics.names)
+      puts "Synced #{Memory::Topics.names.size} topic(s) into #{Memory::SKILL_PATH}"
+      puts "Next: commit it in ~/.dotfiles."
+    else
+      notes = Memory::Corpus.notes
+      Memory::Topics.all.each do |name, desc|
+        puts "- `#{name}` (#{notes.count { |n| n.topics.include?(name) }}) — #{desc}"
+      end
+      puts "- `#{Memory::UNFILED}` (#{notes.count { |n| n.topics.include?(Memory::UNFILED) }}) — reserved: no topic fits yet"
+    end
   end
 
   def index(check: false)
@@ -268,63 +502,85 @@ class Application
   end
 end
 
-parser = OptionParser.new do |opts|
-  opts.banner = <<~BANNER
-    Usage: memory <command> [args]
+if $PROGRAM_NAME == __FILE__
+  parser = OptionParser.new do |opts|
+    opts.banner = <<~BANNER
+      Usage: memory <command> [args]
 
-    Write/maintenance for the memory store at #{Memory::CORPUS_DIR}.
-    (Recall is not here — use INDEX.md + rg + Read; see the `memory` skill.)
+      The memory store at #{Memory::CORPUS_DIR}.
 
-    Commands:
-      add --slug S --type T --tags a,b --title "..." --summary "..."   Scaffold a note + register it
-      index [--check]                                                  Reconcile INDEX.md with notes on disk
-      lint                                                             Validate schema, INDEX sync, wikilinks
-  BANNER
-  opts.on("-h", "--help", "Show this help") { puts opts; exit 0 }
-end
-parser.order!(ARGV)
-
-if ARGV.empty?
-  puts parser
-  exit 0
-end
-
-cmd = ARGV.shift
-app = Application.new
-
-begin
-  case cmd
-  when "add"
-    opts = { tags: [] }
-    OptionParser.new do |o|
-      o.banner = "Usage: memory add --slug S --type T --tags a,b --title \"...\" --summary \"...\""
-      o.separator "        types: #{Memory::KNOWN_TYPES.join(' | ')}"
-      o.on("--slug=SLUG")        { |v| opts[:slug] = v }
-      o.on("--type=TYPE")        { |v| opts[:type] = v }
-      o.on("--tags=A,B", Array)  { |v| opts[:tags] = v.map(&:strip) }
-      o.on("--title=TITLE")      { |v| opts[:title] = v }
-      o.on("--summary=SUMMARY")  { |v| opts[:summary] = v }
-      o.on("--body=BODY")        { |v| opts[:body] = v }
-    end.parse!(ARGV)
-    app.add(**opts)
-  when "index"
-    opts = { check: false }
-    OptionParser.new do |o|
-      o.banner = "Usage: memory index [--check]"
-      o.on("--check", "Report drift without writing (exit 1 if out of sync)") { opts[:check] = true }
-    end.parse!(ARGV)
-    app.index(**opts)
-  when "lint"
-    OptionParser.new { |o| o.banner = "Usage: memory lint" }.parse!(ARGV)
-    app.lint
-  else
-    raise Memory::UsageError, "Unknown command: #{cmd}. Run `memory --help` for usage."
+      Commands:
+        add --slug S --type T --tags a,b --title "..." --summary "..."   Scaffold a note + register it
+        list [--topic a,b] [--repo org/repo] [--no-repo] [--all]         Notes matching facets (repo auto-detected)
+        topics [--sync]                                                  Print the taxonomy / sync it into the skill
+        index [--check]                                                  Reconcile INDEX.md with notes on disk
+        lint                                                             Validate schema, facets, taxonomy, INDEX sync
+    BANNER
+    opts.on("-h", "--help", "Show this help") { puts opts; exit 0 }
   end
-  exit 0
-rescue Memory::Error => e
-  warn "[#{e.kind}] #{e.message}"
-  exit 1
-rescue OptionParser::ParseError => e
-  warn "[invalid_argument] #{e.message}"
-  exit 1
+  parser.order!(ARGV)
+
+  if ARGV.empty?
+    puts parser
+    exit 0
+  end
+
+  cmd = ARGV.shift
+  app = Application.new
+
+  begin
+    case cmd
+    when "add"
+      opts = { tags: [] }
+      OptionParser.new do |o|
+        o.banner = "Usage: memory add --slug S --type T --tags a,b --title \"...\" --summary \"...\""
+        o.separator "        types: #{Memory::KNOWN_TYPES.join(' | ')}"
+        o.separator "        tags:  include topic/<name> (see `memory topics`) and repo/<org>/<repo> where it applies"
+        o.on("--slug=SLUG")        { |v| opts[:slug] = v }
+        o.on("--type=TYPE")        { |v| opts[:type] = v }
+        o.on("--tags=A,B", Array)  { |v| opts[:tags] = v.map(&:strip) }
+        o.on("--title=TITLE")      { |v| opts[:title] = v }
+        o.on("--summary=SUMMARY")  { |v| opts[:summary] = v }
+        o.on("--body=BODY")        { |v| opts[:body] = v }
+      end.parse!(ARGV)
+      app.add(**opts)
+    when "list"
+      opts = { topics: [], repos: nil, all: false, detect: true }
+      OptionParser.new do |o|
+        o.banner = "Usage: memory list [--topic a,b] [--repo org/repo] [--no-repo] [--all]"
+        o.on("--topic=A,B", Array, "Topics to include (unfiled notes ride along)") { |v| opts[:topics] = v.map(&:strip) }
+        o.on("--repo=ORG/REPO", "Override repo detection (repeatable)") { |v| (opts[:repos] ||= []) << v.strip }
+        o.on("--no-repo", "Skip repo detection") { opts[:detect] = false }
+        o.on("--all", "Every note") { opts[:all] = true }
+      end.parse!(ARGV)
+      repos = opts[:repos] || (opts[:detect] ? Memory::Repo.detect : [])
+      app.list(topics: opts[:topics], repos: repos, all: opts[:all])
+    when "topics"
+      opts = { sync: false }
+      OptionParser.new do |o|
+        o.banner = "Usage: memory topics [--sync]"
+        o.on("--sync", "Copy topic names into the memory skill description") { opts[:sync] = true }
+      end.parse!(ARGV)
+      app.topics(**opts)
+    when "index"
+      opts = { check: false }
+      OptionParser.new do |o|
+        o.banner = "Usage: memory index [--check]"
+        o.on("--check", "Report drift without writing (exit 1 if out of sync)") { opts[:check] = true }
+      end.parse!(ARGV)
+      app.index(**opts)
+    when "lint"
+      OptionParser.new { |o| o.banner = "Usage: memory lint" }.parse!(ARGV)
+      app.lint
+    else
+      raise Memory::UsageError, "Unknown command: #{cmd}. Run `memory --help` for usage."
+    end
+    exit 0
+  rescue Memory::Error => e
+    warn "[#{e.kind}] #{e.message}"
+    exit 1
+  rescue OptionParser::ParseError => e
+    warn "[invalid_argument] #{e.message}"
+    exit 1
+  end
 end
