@@ -96,7 +96,7 @@ The CLI refuses to run if:
 - Any worktree has uncommitted changes.
 - The destination log file (`~/Code/memory/log/YYYY-MM-DD-<name>.md`) already exists.
 
-On success it runs `git worktree remove` for each worktree, moves `WORKSPACE.md` to `~/Code/memory/log/`, `rm -rf`s the workspace directory, and `tmux kill-window -t <name>`. It then prints the list of preserved branches (worktree removal doesn't delete branches; they survive on origin if pushed).
+On success it runs `git worktree remove --force` for each worktree (safe because preflight already refused dirty worktrees; `--force` is needed for worktrees with initialized submodules, which plain removal refuses even when clean), moves `WORKSPACE.md` to `~/Code/memory/log/`, `rm -rf`s the workspace directory, and `tmux kill-window -t <name>`. It then prints the list of preserved branches (worktree removal doesn't delete branches; they survive on origin if pushed).
 
 Unpushed commits are **not** checked — branches survive worktree removal regardless.
 

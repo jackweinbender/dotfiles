@@ -317,9 +317,12 @@ module Workspace
       raise DirtyWorktreeError, "Uncommitted changes in worktree(s): #{dirty.map(&:slug).join(", ")}"
     end
 
+    # --force because plain `git worktree remove` refuses any worktree with
+    # initialized submodules, even a clean one. Safe: preflight already
+    # rejected dirty worktrees, and `git status` covers submodule changes.
     def remove_worktrees
       entry.worktrees.each do |wt|
-        ok = system("git", "-C", wt.path, "worktree", "remove", wt.path)
+        ok = system("git", "-C", wt.path, "worktree", "remove", "--force", wt.path)
         raise Error, "git worktree remove failed for #{wt.slug}" unless ok
       end
     end
