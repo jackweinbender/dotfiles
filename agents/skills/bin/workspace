@@ -64,7 +64,7 @@ module Workspace
     end
 
     def dirty?
-      out = git("status", "--porcelain")
+      out = git("status", "--porcelain", "--ignore-submodules=none")
       !out.empty?
     rescue GitError => e
       raise DirtyWorktreeError, "git status failed for #{path}: #{e.message}"
@@ -319,7 +319,7 @@ module Workspace
 
     # --force because plain `git worktree remove` refuses any worktree with
     # initialized submodules, even a clean one. Safe: preflight already
-    # rejected dirty worktrees, and `git status` covers submodule changes.
+    # rejected dirty worktrees, and dirty? overrides submodule ignore config.
     def remove_worktrees
       entry.worktrees.each do |wt|
         ok = system("git", "-C", wt.path, "worktree", "remove", "--force", wt.path)
