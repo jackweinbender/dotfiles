@@ -130,17 +130,18 @@ a re-derivation of the codebase — that's `plan`'s job in the workspace.
 Create-and-open with a seed prompt so the fresh session starts on the brief:
 
 ```bash
-workspace create --name <slug> --open \
+workspace create --name <slug> --open --editor <editor> \
   --prompt "Read ./BRIEF.md and follow it; invoke the plan skill to produce the plan set."
 ```
 
-`--editor` is omitted on purpose: the CLI infers it from the agent you're
-launching from, so the new session runs the same tool (opencode or claude). Pass
-`--editor <cmd>` only to override.
+`--editor` is required and never inferred. Use what the user asked for; if they
+didn't say, ask — `paseo` lands the planner as a Paseo agent, `claude` or
+`opencode` lands it in a tmux window.
 
-(If reusing an existing workspace, use `workspace open --name <slug> --prompt
-"…"` instead — note the seed only takes effect on a *freshly opened* window; if
-the window already exists, brief the user to read BRIEF.md manually.)
+(If reusing an existing workspace, use `workspace open --name <slug> --editor
+<editor> --prompt "…"` instead — note the seed only takes effect on a *fresh*
+session; if the tmux window or a live Paseo agent already exists, brief the user
+to read BRIEF.md manually.)
 
 Phrase the seed in **natural language** ("invoke the plan skill"), not a literal
 `/plan` — a seeded initial prompt isn't guaranteed to parse as a slash command,

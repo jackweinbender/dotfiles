@@ -6,6 +6,7 @@ require "fileutils"
 require "date"
 require "pathname"
 require "shellwords"
+require "json"
 
 module Workspace
 
@@ -152,27 +153,23 @@ module Workspace
     end
   end
 
-  # Resolves which editor/agent tool to launch and how to seed it with an
-  # initial prompt. When no editor is given explicitly, we infer it from the
-  # environment of the *calling* process — i.e. the agent tool that shelled out
-  # to `workspace` — so a new window inherits the tool you launched from. The
-  # CLI inherits its parent agent's env (it runs as a child via that agent's
-  # shell-out), which is where these fingerprints come from.
+  # Which tool to launch in the workspace, and how to seed it with an initial
+  # prompt. The editor is always explicit (`--editor`): nothing is inferred
+  # from the calling session, so a seeded handoff lands where you said it
+  # should, on any box. Two kinds of value:
+  #   - a shell command (`claude`, `opencode`, `vim`) — launched in a tmux window
+  #   - `paseo` — launched as an agent through the Paseo daemon (module Paseo)
   module Editor
     module_function
 
-    # Env fingerprints left by known agent tools in their session's process.
-    def infer
-      return "opencode" if ENV.key?("OPENCODE")
-      return "claude"   if ENV.key?("CLAUDECODE") || ENV.key?("CLAUDE_CODE_SSE_PORT")
-      nil
+    def resolve(explicit)
+      value = explicit.to_s.strip
+      raise UsageError, "--editor is required (e.g. claude, opencode, paseo)" if value.empty?
+      value
     end
 
-    # Resolve the editor command: explicit value wins, else infer from env.
-    # Returns nil if neither is available (caller decides whether that's fatal).
-    def resolve(explicit)
-      return explicit if explicit && !explicit.empty?
-      infer
+    def paseo?(editor)
+      File.basename(editor.to_s.split(/\s/).first.to_s) == "paseo"
     end
 
     # Build the shell command that launches `editor`, optionally seeded with an
@@ -226,6 +223,93 @@ module Workspace
     end
   end
 
+  # The Paseo daemon as a session surface. A workspace folder maps to one Paseo
+  # workspace (local isolation, cwd = the folder); `open` launches one agent
+  # there from a named agent profile in ~/.paseo/config.json. Everything goes
+  # through the `paseo` CLI — nothing here touches Paseo's registry files.
+  module Paseo
+    module_function
+
+    CONFIG_PATH = File.expand_path(ENV.fetch("WORKSPACE_PASEO_CONFIG", "~/.paseo/config.json"))
+    PROFILE     = "Architect"
+    STUB_PROMPT = "Read ./WORKSPACE.md and wait for instructions."
+
+    def cli(*args, chdir: nil)
+      argv = ["paseo", *args, "--json"]
+      popen_opts = { err: File::NULL }
+      popen_opts[:chdir] = chdir if chdir
+      out = IO.popen(argv, popen_opts, &:read).to_s
+      raise Error, "paseo #{args.first} failed (exit #{$?.exitstatus})" unless $?.success?
+      JSON.parse(out)
+    rescue Errno::ENOENT
+      raise Error, "paseo CLI not found on PATH"
+    rescue JSON::ParserError
+      raise Error, "paseo #{args.first} returned non-JSON output"
+    end
+
+    def find_workspace(cwd)
+      cli("workspace", "ls").find { |w| w["cwd"] == cwd }
+    end
+
+    def ensure_workspace(name, cwd)
+      find_workspace(cwd) ||
+        cli("workspace", "create", "--isolation", "local", "--path", cwd, "--title", name)
+    end
+
+    # List globally and filter by path ourselves: `paseo ls` scoped to a
+    # directory with no agents falls back to listing every agent, and its cwd
+    # field is tilde-abbreviated.
+    def live_agent?(cwd)
+      cli("ls", "--global").any? do |a|
+        a["status"] != "closed" && File.expand_path(a["cwd"].to_s) == cwd
+      end
+    end
+
+    def profile(name = PROFILE)
+      config = JSON.parse(File.read(CONFIG_PATH))
+      found = Array(config.dig("daemon", "agentProfiles")).find { |p| p["name"] == name }
+      raise Error, "agent profile #{name.inspect} not found in #{CONFIG_PATH}" unless found
+      found
+    rescue Errno::ENOENT
+      raise Error, "Paseo config not found at #{CONFIG_PATH}"
+    end
+
+    # Materialize a profile into `paseo run` flags (the CLI has no --profile).
+    def run_flags(profile)
+      flags = ["--provider", [profile["provider"], profile["model"]].compact.join("/")]
+      flags += ["--mode", profile["modeId"]] if profile["modeId"]
+      flags += ["--thinking", profile["thinkingOptionId"]] if profile["thinkingOptionId"]
+      flags
+    end
+
+    # :existing when the workspace already has a live agent (mirrors tmux's
+    # select-if-exists: a running session is never re-seeded), else :launched.
+    def open(name, cwd, prompt = nil)
+      ws = ensure_workspace(name, cwd)
+      return :existing if live_agent?(cwd)
+      seed = prompt.to_s.empty? ? STUB_PROMPT : prompt
+      cli("run", "--background", "--workspace", ws["workspaceId"], "--title", name,
+          *run_flags(profile), seed)
+      :launched
+    end
+
+    # Idempotent, like Tmux.kill: true if a registered workspace was archived,
+    # false if there was none or Paseo is unavailable on this box. Registering
+    # a folder makes Paseo create a project rooted on that folder; archiving the
+    # workspace leaves it behind, so the project rooted exactly on the folder
+    # is deleted too (a project rooted elsewhere, e.g. ~/Code, is left alone).
+    def archive(cwd)
+      ws = find_workspace(cwd)
+      return false unless ws
+      cli("workspace", "archive", ws["workspaceId"])
+      project = cli("project", "ls").find { |p| p["path"] == cwd }
+      cli("project", "delete", project["projectId"]) if project
+      true
+    rescue Error
+      false
+    end
+  end
+
   class Destroyer
     attr_reader :entry
 
@@ -246,9 +330,10 @@ module Workspace
       preflight
       preserved = entry.worktrees.map { |wt| { slug: wt.slug, branch: wt.branch } }
       remove_worktrees_force
+      paseo_archived = Paseo.archive(entry.path)
       FileUtils.rm_rf(entry.path)
       Tmux.kill(entry.name)
-      { preserved: preserved }
+      { preserved: preserved, paseo_archived: paseo_archived }
     end
 
     private
@@ -289,9 +374,10 @@ module Workspace
       preserved = snapshot_worktrees
       remove_worktrees
       move_workspace_md
+      paseo_archived = Paseo.archive(entry.path)
       remove_workspace
       Tmux.kill(entry.name)
-      { log_dest: log_dest, preserved: preserved }
+      { log_dest: log_dest, preserved: preserved, paseo_archived: paseo_archived }
     end
 
     private
@@ -350,9 +436,15 @@ class Application
     entry = Workspace::Entry.new(name)
     raise Workspace::NotFoundError, "Workspace '#{name}' not found at #{entry.path}" unless entry.exist?
     resolved = Workspace::Editor.resolve(editor)
-    raise Workspace::UsageError, "could not determine editor: pass --editor or run from a known agent (opencode/claude)" if resolved.nil?
-    ok = Workspace::Tmux.open(name, entry.path, resolved, prompt)
-    raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
+    if Workspace::Editor.paseo?(resolved)
+      case Workspace::Paseo.open(name, entry.path, prompt)
+      when :existing then puts "Paseo workspace '#{name}' already has a live agent; nothing launched"
+      when :launched then puts "Launched Paseo agent in workspace '#{name}'"
+      end
+    else
+      ok = Workspace::Tmux.open(name, entry.path, resolved, prompt)
+      raise Workspace::Error, "tmux command failed (is tmux running?)" unless ok
+    end
   end
 
   def status(name:)
@@ -427,11 +519,13 @@ class Application
       end
       puts "  Will rm -rf:       #{plan[:workspace_path]}"
       puts "  Will close tmux:   #{plan[:tmux_window]} (if exists)"
+      puts "  Will archive Paseo workspace at #{plan[:workspace_path]} (if registered)"
       return
     end
 
     result = destroyer.run
     puts "Destroyed workspace '#{name}'"
+    puts "  Archived Paseo workspace" if result[:paseo_archived]
     if result[:preserved].any?
       puts "  Branches preserved (uncommitted changes discarded):"
       result[:preserved].each do |wt|
@@ -458,12 +552,14 @@ class Application
       puts "  Archive destination: #{plan[:log_dest]}"
       puts "  Will rm -rf:       #{plan[:workspace_path]}"
       puts "  Will close tmux:   #{plan[:tmux_window]} (if exists)"
+      puts "  Will archive Paseo workspace at #{plan[:workspace_path]} (if registered)"
       return
     end
 
     result = completer.run
     puts "Completed workspace '#{name}'"
     puts "  Archived: #{result[:log_dest]}"
+    puts "  Archived Paseo workspace" if result[:paseo_archived]
     if result[:preserved].any?
       puts "  Branches preserved:"
       result[:preserved].each do |wt|
@@ -475,15 +571,17 @@ class Application
 end
 
 
+return unless __FILE__ == $PROGRAM_NAME
+
 parser = OptionParser.new do |opts|
   opts.banner = <<~BANNER
     Usage: workspace <command> [args]
 
     Commands:
-      create   --name <name> [--open]     Create a new workspace from the template
-        (alias: new)                      (--open launches your current agent unless --editor given)
-      open     --name <name>              Open or switch to the workspace's tmux window
-        [--editor <cmd>]                  (editor defaults to the agent you launched from)
+      create   --name <name>              Create a new workspace from the template
+        (alias: new) [--open --editor <e>]  (--open requires --editor)
+      open     --name <name> --editor <e> Open the workspace: a tmux window running <e>,
+                                          or a Paseo agent when <e> is `paseo`
       status   --name <name>              Show worktree and WORKSPACE.md state
       list                                List workspaces with summary state
       complete --name <name> [--dry-run]  Tear down a finished workspace
@@ -507,21 +605,22 @@ begin
   when "create", "new"
     opts = { name: nil, open: false, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace #{cmd} --name <name> [--open [--editor <cmd>] [--prompt <text>]]"
+      o.banner = "Usage: workspace #{cmd} --name <name> [--open --editor <cmd|paseo> [--prompt <text>]]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
-      o.on("--open", "Open the workspace in tmux after creating") { opts[:open] = true }
-      o.on("--editor=CMD", "Editor command to launch in tmux (defaults to the agent you launched from)") { |v| opts[:editor] = v }
-      o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
+      o.on("--open", "Open the workspace after creating (requires --editor)") { opts[:open] = true }
+      o.on("--editor=CMD", "Tool to launch: a command for a tmux window (claude, opencode, vim) or `paseo`") { |v| opts[:editor] = v }
+      o.on("--prompt=TEXT", "Initial input to seed the tool with (fresh session only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "#{cmd} requires --name" if opts[:name].nil? || opts[:name].empty?
+    raise Workspace::UsageError, "--open requires --editor (e.g. claude, opencode, paseo)" if opts[:open] && opts[:editor].to_s.strip.empty?
     app.create(**opts)
   when "open"
     opts = { name: nil, editor: nil, prompt: nil }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace open --name <name> [--editor <cmd>] [--prompt <text>]"
+      o.banner = "Usage: workspace open --name <name> --editor <cmd|paseo> [--prompt <text>]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
-      o.on("--editor=CMD", "Editor command to launch in tmux (defaults to the agent you launched from)") { |v| opts[:editor] = v }
-      o.on("--prompt=TEXT", "Initial input to seed the editor with (freshly opened window only)") { |v| opts[:prompt] = v }
+      o.on("--editor=CMD", "Tool to launch: a command for a tmux window (claude, opencode, vim) or `paseo`") { |v| opts[:editor] = v }
+      o.on("--prompt=TEXT", "Initial input to seed the tool with (fresh session only)") { |v| opts[:prompt] = v }
     end.parse!(ARGV)
     raise Workspace::UsageError, "open requires --name" if opts[:name].nil? || opts[:name].empty?
     app.open(**opts)

@@ -37,34 +37,32 @@ The `workspace` CLI is on `PATH` and permitted via `Bash(workspace:*)` in `~/Cod
 
 ### Commands
 
-#### `create --name <name> [--open [--editor <cmd>] [--prompt <text>]]` (alias: `new`)
+#### `create --name <name> [--open --editor <cmd|paseo> [--prompt <text>]]` (alias: `new`)
 
-Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also drop the user into a tmux window running the editor in the new workspace. `--editor` is optional — when omitted it defaults to the agent tool you launched from (see `open` below for how that's inferred). `--prompt` (optional) seeds the launched tool with an initial input — see `open` below.
+Copy the workspace template (`~/.dotfiles/agents/templates/workspace/`) to `~/Code/workspaces/<name>/`. With `--open`, also open it — `--editor` is then required, exactly as for `open` below. `--prompt` (optional) seeds the launched tool with an initial input — see `open` below.
 
 ```bash
-# launches whichever agent you're running in (opencode or claude):
-workspace create --name <name> --open
-# force a specific editor:
 workspace new --name <name> --open --editor claude
-# seeded launch (e.g. from the `brief` skill):
-workspace create --name <name> --open \
+# seeded launch (e.g. from the `brief` skill), in Paseo:
+workspace create --name <name> --open --editor paseo \
   --prompt "Read ./BRIEF.md and follow it; invoke the plan skill to produce the plan set."
 ```
 
 Fails if `<name>` already exists, the template is missing, or the name contains characters outside `[A-Za-z0-9._-]`.
 
-#### `open --name <name> [--editor <cmd>] [--prompt <text>]`
+#### `open --name <name> --editor <cmd|paseo> [--prompt <text>]`
 
-Switch to the workspace's tmux window if it exists; otherwise create one and start the editor in it. `--editor` is optional: when omitted, the CLI infers the editor from the agent tool you launched from — it reads the calling process's environment (`OPENCODE` → `opencode`; `CLAUDECODE`/`CLAUDE_CODE_SSE_PORT` → `claude`), so a new window inherits your current agent. Pass `--editor` explicitly to override (e.g. `claude`, `opencode`, `vim`). If neither an explicit editor nor a known agent is detected, the command errors. This replaces hand-written `tmux new-window` calls — use it instead.
+Open the workspace in the tool you name. `--editor` is **always required** — the CLI never infers it from the session you're calling from, so say where the session should land every time. Two kinds of value:
 
-A **freshly opened** window is split into two panes: the editor on top, and a plain shell (your default shell) rooted in the workspace cwd as a ~30%-height bottom pane, with focus left on the editor. An **existing** window is just re-selected — no re-split.
+- **A command** (`claude`, `opencode`, `vim`, …) opens a tmux window running it. If the window already exists it's just re-selected. A **freshly opened** window is split into two panes: the editor on top, and a plain shell rooted in the workspace cwd as a ~30%-height bottom pane, with focus on the editor. This replaces hand-written `tmux new-window` calls — use it instead.
+- **`paseo`** opens the workspace in the Paseo daemon instead of tmux: it registers a Paseo workspace on the folder (local isolation; reused if one already exists for that path) and launches one agent there using the `Architect` agent profile from `~/.paseo/config.json`. If the Paseo workspace already has a live agent, nothing is launched. Requires the `paseo` CLI on `PATH` and a running daemon.
 
-`--prompt` (optional) seeds the launched tool with an initial input, using the tool-specific form: a bare positional for `claude` (`claude "Read ./BRIEF.md …"`) and the `--prompt` flag for `opencode` (`opencode --prompt "…"`); unknown tools get the positional form. It **only applies to a freshly opened window**; if the window already exists, `open` just selects it (the live session can't be re-seeded). The `brief` skill uses this to launch a planner straight onto the brief.
+`--prompt` (optional) seeds the launched tool with an initial input, using the tool-specific form: a bare positional for `claude`, the `--prompt` flag for `opencode` (unknown commands get the positional form), and the agent's initial prompt for `paseo`. It **only applies to a fresh session**; an existing tmux window or a live Paseo agent can't be re-seeded. Without `--prompt`, a Paseo agent is seeded with a stub ("read `./WORKSPACE.md` and wait for instructions") since an agent needs an initial prompt. The `brief` skill uses `--prompt` to launch a planner straight onto the brief.
 
 ```bash
-workspace open --name <name>                        # inherits your current agent
-workspace open --name <name> --editor opencode      # force a specific editor
-workspace open --name <name> --prompt "Read ./BRIEF.md and follow it."
+workspace open --name <name> --editor claude
+workspace open --name <name> --editor paseo
+workspace open --name <name> --editor paseo --prompt "Read ./BRIEF.md and follow it."
 ```
 
 #### `status --name <name>`
@@ -85,7 +83,7 @@ workspace list
 
 #### `complete --name <name> [--dry-run]`
 
-Tear down a finished workspace: remove its worktrees, archive its `WORKSPACE.md` into the memory log, delete the workspace directory, and close its tmux window.
+Tear down a finished workspace: remove its worktrees, archive its `WORKSPACE.md` into the memory log, delete the workspace directory, and close its session surfaces — the tmux window if one exists, and the Paseo workspace if one is registered on the folder (both are skipped silently when absent).
 
 **This command is destructive.** Use `--dry-run` to preview the plan without executing.
 
@@ -102,7 +100,7 @@ Unpushed commits are **not** checked — branches survive worktree removal regar
 
 #### `destroy --name <name> [--dry-run]`
 
-Force-remove a workspace with **no archive and no AI flow**: force-removes worktrees (discarding any uncommitted changes), `rm -rf`s the workspace directory, and closes the tmux window. Branches are preserved (worktree removal doesn't delete branch refs), but uncommitted changes in dirty worktrees are gone.
+Force-remove a workspace with **no archive and no AI flow**: force-removes worktrees (discarding any uncommitted changes), `rm -rf`s the workspace directory, closes the tmux window, and archives the Paseo workspace if one is registered. Branches are preserved (worktree removal doesn't delete branch refs), but uncommitted changes in dirty worktrees are gone.
 
 Use this for throwaway workspaces where there's nothing worth distilling — debug spikes, experiments, mistakes. For workspaces with real work, use `complete` instead.
 
