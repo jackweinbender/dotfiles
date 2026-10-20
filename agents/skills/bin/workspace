@@ -13,6 +13,9 @@ module Workspace
   WORKSPACES_DIR = File.expand_path("~/Code/workspaces")
   TEMPLATE_DIR   = File.expand_path("../../templates/workspace", __dir__)
   MEMORY_LOG_DIR = File.expand_path("~/Code/memory/log")
+  # Outside the git-tracked memory store: artifacts can hold user data.
+  ARCHIVE_DIR    = File.expand_path("~/Code/archive")
+  IGNORED_LOOSE  = %w[.DS_Store].freeze
   NAME_PATTERN   = /\A[A-Za-z0-9._-]+\z/
   STUB_SUMMARY   = "_Filled in when the workspace is completed._"
 
@@ -26,6 +29,7 @@ module Workspace
   class DirtyWorktreeError < Error; def kind = "dirty_worktree"; end
   class EmptySummaryError  < Error; def kind = "empty_summary";  end
   class GitError           < Error; def kind = "git_error";       end
+  class LooseFilesError    < Error; def kind = "loose_files";     end
 
   # Inspects a single git worktree path. All accessors shell out to git; values
   # are reasonably cheap to recompute, so no memoization.
@@ -100,6 +104,14 @@ module Workspace
     def workspace_md_path = File.join(path, "WORKSPACE.md")
     def worktrees_dir     = File.join(path, ".worktrees")
     def exist?            = File.exist?(path)
+
+    # Top-level entries the template didn't create (directories count as one
+    # entry), e.g. ["queries", "research"].
+    def loose_entries
+      return [] unless exist?
+      template = Dir.exist?(TEMPLATE_DIR) ? Dir.children(TEMPLATE_DIR) : []
+      (Dir.children(path) - template - IGNORED_LOOSE - [".worktrees"]).sort
+    end
 
     def worktrees
       return [] unless Dir.exist?(worktrees_dir)
@@ -351,12 +363,15 @@ module Workspace
   end
 
   class Completer
-    attr_reader :entry, :date, :log_dest
+    attr_reader :entry, :date, :log_dest, :archive_dest, :keep, :discard_loose
 
-    def initialize(entry, date: Date.today)
+    def initialize(entry, date: Date.today, keep: [], discard_loose: false)
       @entry = entry
       @date  = date
       @log_dest = File.join(MEMORY_LOG_DIR, "#{date.iso8601}-#{entry.name}.md")
+      @archive_dest = File.join(ARCHIVE_DIR, "#{date.iso8601}-#{entry.name}")
+      @keep = keep.map { |k| Pathname.new(k).cleanpath.to_s }
+      @discard_loose = discard_loose
     end
 
     def plan
@@ -364,6 +379,9 @@ module Workspace
       {
         worktrees: snapshot_worktrees,
         log_dest: log_dest,
+        keep: keep,
+        archive_dest: keep.empty? ? nil : archive_dest,
+        discard: unkept_loose,
         workspace_path: entry.path,
         tmux_window: entry.name,
       }
@@ -373,14 +391,21 @@ module Workspace
       preflight
       preserved = snapshot_worktrees
       remove_worktrees
+      archive_kept
       move_workspace_md
       paseo_archived = Paseo.archive(entry.path)
       remove_workspace
       Tmux.kill(entry.name)
-      { log_dest: log_dest, preserved: preserved, paseo_archived: paseo_archived }
+      { log_dest: log_dest, preserved: preserved, paseo_archived: paseo_archived,
+        archive_dest: keep.empty? ? nil : archive_dest, kept: keep }
     end
 
     private
+
+    # Loose entries not archived whole by a --keep path.
+    def unkept_loose
+      entry.loose_entries - keep
+    end
 
     def snapshot_worktrees
       entry.worktrees.map { |wt| { slug: wt.slug, branch: wt.branch, upstream: wt.upstream } }
@@ -398,6 +423,20 @@ module Workspace
 
       raise DuplicateError, "Log already exists at #{log_dest}" if File.exist?(log_dest)
 
+      keep.each do |k|
+        if k.start_with?("/", "..") || k == "." || !File.exist?(File.join(entry.path, k))
+          raise UsageError, "--keep path not found inside the workspace: #{k}"
+        end
+        if k == "WORKSPACE.md" || k == ".worktrees" || k.start_with?(".worktrees/")
+          raise UsageError, "--keep can't archive #{k}"
+        end
+      end
+      raise DuplicateError, "Archive already exists at #{archive_dest}" if keep.any? && File.exist?(archive_dest)
+      if unkept_loose.any? && !discard_loose
+        raise LooseFilesError, "Loose files would be deleted: #{unkept_loose.join(", ")}. " \
+          "Archive them with --keep <path> or pass --discard-loose"
+      end
+
       dirty = entry.worktrees.select(&:dirty?)
       return if dirty.empty?
       raise DirtyWorktreeError, "Uncommitted changes in worktree(s): #{dirty.map(&:slug).join(", ")}"
@@ -413,9 +452,22 @@ module Workspace
       end
     end
 
+    def archive_kept
+      keep.each do |k|
+        dest = File.join(archive_dest, k)
+        FileUtils.mkdir_p(File.dirname(dest))
+        FileUtils.mv(File.join(entry.path, k), dest)
+      end
+    end
+
     def move_workspace_md
       FileUtils.mkdir_p(MEMORY_LOG_DIR)
       FileUtils.mv(entry.workspace_md_path, log_dest)
+      return if keep.empty?
+      File.open(log_dest, "a") do |f|
+        f.puts "", "## Artifacts", "", "Archived to `#{archive_dest}` (not git-tracked):"
+        keep.each { |k| f.puts "- `#{k}`" }
+      end
     end
 
     def remove_workspace
@@ -454,6 +506,7 @@ class Application
     puts "Workspace: #{entry.name}"
     puts "  Path:      #{entry.path}"
     puts "  WORKSPACE.md:  #{entry.workspace_md_state}"
+    puts "  Loose files:   #{entry.loose_entries.empty? ? "(none)" : entry.loose_entries.join(", ")}"
     puts "  Worktrees:"
     wts = entry.worktrees
     if wts.empty?
@@ -489,6 +542,8 @@ class Application
           "no (doc #{e.workspace_md_state})"
         elsif dirty > 0
           "no (#{dirty} dirty)"
+        elsif e.loose_entries.any?
+          "no (#{e.loose_entries.size} loose; review first)"
         else
           "yes"
         end
@@ -534,9 +589,9 @@ class Application
     end
   end
 
-  def complete(name:, dry_run: false)
+  def complete(name:, dry_run: false, keep: [], discard_loose: false)
     entry = Workspace::Entry.new(name)
-    completer = Workspace::Completer.new(entry)
+    completer = Workspace::Completer.new(entry, keep: keep, discard_loose: discard_loose)
 
     if dry_run
       plan = completer.plan
@@ -550,6 +605,8 @@ class Application
         end
       end
       puts "  Archive destination: #{plan[:log_dest]}"
+      plan[:keep].each { |k| puts "  Will archive:      #{k} -> #{File.join(plan[:archive_dest], k)}" }
+      plan[:discard].each { |d| puts "  Will delete loose: #{d}" }
       puts "  Will rm -rf:       #{plan[:workspace_path]}"
       puts "  Will close tmux:   #{plan[:tmux_window]} (if exists)"
       puts "  Will archive Paseo workspace at #{plan[:workspace_path]} (if registered)"
@@ -559,6 +616,7 @@ class Application
     result = completer.run
     puts "Completed workspace '#{name}'"
     puts "  Archived: #{result[:log_dest]}"
+    puts "  Artifacts: #{result[:kept].join(", ")} -> #{result[:archive_dest]}" if result[:archive_dest]
     puts "  Archived Paseo workspace" if result[:paseo_archived]
     if result[:preserved].any?
       puts "  Branches preserved:"
@@ -585,6 +643,7 @@ parser = OptionParser.new do |opts|
       status   --name <name>              Show worktree and WORKSPACE.md state
       list                                List workspaces with summary state
       complete --name <name> [--dry-run]  Tear down a finished workspace
+               [--keep <path>]... [--discard-loose]
       destroy  --name <name> [--dry-run]  Force-remove a workspace (skip doc/memory flow)
 
   BANNER
@@ -636,11 +695,13 @@ begin
     OptionParser.new { |o| o.banner = "Usage: workspace list" }.parse!(ARGV)
     app.list
   when "complete"
-    opts = { name: nil, dry_run: false }
+    opts = { name: nil, dry_run: false, keep: [], discard_loose: false }
     OptionParser.new do |o|
-      o.banner = "Usage: workspace complete --name <name> [--dry-run]"
+      o.banner = "Usage: workspace complete --name <name> [--dry-run] [--keep <path>]... [--discard-loose]"
       o.on("--name=NAME", "Workspace name") { |v| opts[:name] = v }
       o.on("--dry-run", "Show what would happen without modifying anything") { opts[:dry_run] = true }
+      o.on("--keep=PATH", "Archive this workspace-relative path to #{Workspace::ARCHIVE_DIR}/<date>-<name>/ (repeatable)") { |v| opts[:keep] << v }
+      o.on("--discard-loose", "Allow deleting loose files not archived with --keep") { opts[:discard_loose] = true }
     end.parse!(ARGV)
     raise Workspace::UsageError, "complete requires --name" if opts[:name].nil? || opts[:name].empty?
     app.complete(**opts)

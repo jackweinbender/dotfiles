@@ -1,6 +1,6 @@
 ---
 name: workspace
-description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, snapshot (mid-flight WORKSPACE.md compaction for a clean handoff, no teardown), complete (distill WORKSPACE.md, retro the environment for defects worth fixing, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, compact, wrap up, or abandon a workspace.
+description: Operations on workspaces under ~/Code/workspaces/ — create, open, status, list, snapshot (mid-flight WORKSPACE.md compaction for a clean handoff, no teardown), complete (distill WORKSPACE.md, review loose artifacts into publish/archive/drop, retro the environment for defects worth fixing, archive to memory/log, tear down), and destroy (force-remove with no archive). Use when the user asks to scaffold, switch into, inspect, compact, wrap up, or abandon a workspace.
 ---
 
 # workspace
@@ -81,7 +81,7 @@ Print all workspaces with worktree counts, WORKSPACE.md state, and a `READY` col
 workspace list
 ```
 
-#### `complete --name <name> [--dry-run]`
+#### `complete --name <name> [--dry-run] [--keep <path>]... [--discard-loose]`
 
 Tear down a finished workspace: remove its worktrees, archive its `WORKSPACE.md` into the memory log, delete the workspace directory, and close its session surfaces — the tmux window if one exists, and the Paseo workspace if one is registered on the folder (both are skipped silently when absent).
 
@@ -93,6 +93,10 @@ The CLI refuses to run if:
 - `WORKSPACE.md`'s `## Summary` section is empty or still the template stub.
 - Any worktree has uncommitted changes.
 - The destination log file (`~/Code/memory/log/YYYY-MM-DD-<name>.md`) already exists.
+- Any **loose file** would be deleted unaccounted for. Loose files are top-level entries the template didn't create (a directory counts as one entry; `.worktrees/` excluded); `status` lists them. Each must be archived whole with `--keep <path>`, or `--discard-loose` must be passed to allow deleting the rest.
+- A `--keep` path is outside the workspace, missing, or is `WORKSPACE.md` / `.worktrees`; or the archive folder already exists.
+
+`--keep <path>` (repeatable, workspace-relative) moves that path to `~/Code/archive/YYYY-MM-DD-<name>/<path>` — outside the git-tracked memory store, so it may hold user data — and appends an `## Artifacts` section listing it to the archived log.
 
 On success it runs `git worktree remove --force` for each worktree (safe because preflight already refused dirty worktrees; `--force` is needed for worktrees with initialized submodules, which plain removal refuses even when clean), moves `WORKSPACE.md` to `~/Code/memory/log/`, `rm -rf`s the workspace directory, and `tmux kill-window -t <name>`. It then prints the list of preserved branches (worktree removal doesn't delete branches; they survive on origin if pushed).
 
@@ -112,7 +116,7 @@ workspace destroy --name <name>
 
 ## The `complete` flow
 
-The CLI handles all mechanical work. Steps 2–5 require AI judgment and must be done **before** running `complete`.
+The CLI handles all mechanical work. Steps 2–6 require AI judgment and must be done **before** running `complete`.
 
 ### 1. Run `workspace status --name <name>` to confirm preflight state
 
@@ -128,15 +132,27 @@ The CLI will refuse to complete if Summary is empty or still the stub, so this s
 
 Workspace `TODOS.md` is optional — it's not in the template and only exists if created ad-hoc. If `~/Code/workspaces/<name>/TODOS.md` is present with open items in any of `END OF DAY`, `Active followups`, or `TODO`, surface them to the user and ask what to do. The likely default is to roll them up into the matching sections of `~/Code/TODOS.md`, but the user may say to drop specific items or skip the rollup entirely. Resolve every open item before running `complete` — the workspace `TODOS.md` is deleted with the workspace, so anything not migrated is lost.
 
-### 4. Propose durable-knowledge candidates and record them
+### 4. Review loose artifacts
+
+`complete` deletes everything except `WORKSPACE.md`, so anything else the work produced — queries, scripts, research docs, result files, generated configs — needs a decision first. Take the **Loose files** line from `workspace status`, look inside each entry, and propose one outcome per entry (split a directory when its parts deserve different outcomes):
+
+- **Publish** — finished, shareable material moves to where others will find it: a repo (via a worktree and PR), Notion, or a team doc. Do the move, then the entry can be dropped.
+- **Archive** — raw or sensitive outputs, and anything worth re-reading but not worth publishing, go to `~/Code/archive/` via `--keep <path>`. Use this, never the memory store, for anything carrying user IDs, revenue, credentials-adjacent data, or customer content.
+- **Drop** — scratch and anything cheaply regenerable.
+
+Also flag any entry whose content looks like **unfinished work** (an in-progress line in `## Status` that points at it, files newer than the last Log entry): that is a reason to stop and ask whether the workspace should be completed at all.
+
+Present the proposals as a short table (entry, outcome, why) and **wait for approval.** Then carry out the publishes and pass the approved `--keep` paths (plus `--discard-loose` if anything is dropped) to `complete` in the last step.
+
+### 5. Propose durable-knowledge candidates and record them
 
 Re-read the distilled WORKSPACE.md and identify anything that should outlive the workspace — procedures, design decisions with lasting force, gotchas, conventions, references. **Propose** each to the user as a candidate memory note (a `--slug`, a `--type`, and a one-line `--summary`). **Wait for explicit approval.** If there's nothing durable, say so and skip.
 
 On approval, record each through the `memory` skill — `memory add --slug … --type … --tags … --title … --summary …` — then fill in the body from the WORKSPACE.md detail and commit in `memory/`. This closes the episodic→knowledge loop: the archived log captures *what happened*; the memory note captures the *durable lesson*. Let `memory add` own the frontmatter and `INDEX.md` — don't hand-write into the store. (The completed-work log itself is moved to `~/Code/memory/log/` by the CLI in the next step — don't write there yourself.)
 
-### 5. Retro — what the environment cost this run
+### 6. Retro — what the environment cost this run
 
-Step 4 harvests durable *knowledge*. This step harvests **environment defects**:
+Step 5 harvests durable *knowledge*. This step harvests **environment defects**:
 the things about the agent's surroundings that made this run slower, wronger, or
 more expensive than it needed to be. The output is proposed edits to skills,
 `AGENTS.md`, or the repo's checks — never memory notes.
@@ -177,13 +193,13 @@ carries the least. So a new *standard* belongs on the review axis, not in the
 implementer's prompt; only a rule the implementer must hold *while writing*
 earns a place in `AGENTS.md`.
 
-### 6. Run `workspace complete --name <name>` (or `--dry-run` first)
+### 7. Run `workspace complete --name <name>` (or `--dry-run` first)
 
 ```bash
-workspace complete --name <name>
+workspace complete --name <name> --keep <path> [--keep <path>]... [--discard-loose]
 ```
 
-Report the preserved-branches output back to the user.
+Report the preserved-branches and archived-artifacts output back to the user.
 
 ## Snapshotting a workspace (mid-flight hygiene)
 
