@@ -129,7 +129,7 @@ Skills live at `~/Code/.claude/skills/<name>/SKILL.md`, where Claude Code auto-l
 
 The skills compose into an **opt-in idea→implementation pipeline** — `brainstorm → vet → brief → plan → execute` — whose two thinking stages (`brainstorm`, `vet`) run here in the main thread and hand off to a workspace via `brief`. Reach for them deliberately; work is not auto-routed. See `memory/knowledge/skill-pipeline.md` for the full flow, the optional skip-ahead moves, and the invariants.
 
-**Develop skills directly in `~/.dotfiles/agents/skills/`** — like all `~/.dotfiles` edits (see "Prefer editing in a workspace" above), do *not* cut a workspace or worktree. The `~/Code/.claude/skills/*` symlinks point back to that tree, so in-place edits go live immediately and stay git-tracked there (that's the change-control boundary). Commit skill changes in the `~/.dotfiles` repo as usual.
+**Develop skills directly in `~/.dotfiles/agents/skills/`** — like all `~/.dotfiles` edits (see "Prefer editing in a workspace" above), do *not* cut a workspace or worktree. The `~/Code/.claude/skills/*` symlinks point back to that tree, so in-place edits go live immediately and stay git-tracked there (that's the change-control boundary). Commit skill changes in the `~/.dotfiles` repo as usual. Work-specific skills don't go in `~/.dotfiles` (it's public): they live in a private overlay repo, `~/.dotfiles-*/agents/skills/` (same layout, linked and put on `PATH` the same way), and get committed there.
 
 Skills should broadly be structured following the format at https://pi.dev/docs/latest/skills. Accompanying scripts and CLIs should abide by the skill-composition note in the memory store (`memory/knowledge/claude-skill-composition.md`).
 

@@ -467,7 +467,7 @@ class Application
     if sync
       Memory::Skill.sync!(Memory::Topics.names)
       puts "Synced #{Memory::Topics.names.size} topic(s) into #{Memory::SKILL_PATH}"
-      puts "Next: commit it in ~/.dotfiles."
+      puts "Live now; nothing to commit (git keeps a placeholder line, see ~/.dotfiles/.gitattributes)."
     else
       notes = Memory::Corpus.notes
       Memory::Topics.all.each do |name, desc|

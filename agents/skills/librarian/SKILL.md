@@ -88,8 +88,8 @@ what it is most often confused with.
 
    Name topics with the word an agent would reach for mid-task (`cookies`,
    `ci`, `grafana`), kebab-case. Give each a boundary against its nearest
-   neighbour. Existing free-form tags are hints, not answers — `acme` is a
-   scope, not a topic. Put a one-paragraph header above the list saying the file
+   neighbour. Existing free-form tags are hints, not answers — a company or
+   product name is a scope, not a topic. Put a one-paragraph header above the list saying the file
    is curated by `/librarian`.
 2. **File every note**: add `topic/<name>` tags to each note's `tags:` list,
    at least one per note, about two on average. **Over-assign** — a missing
@@ -147,7 +147,7 @@ The PR body carries:
 - **Counts** — per topic, before → after; topic count vs the bounds.
 - **Filing** — notes moved out of `unfiled`, and notes re-filed by a split or merge.
 - **Uncertain calls** — placements or boundaries you weren't sure of, and why.
-- **After merge** — when `TOPICS.md` changed: run `memory topics --sync` and commit
-  the skill description in `~/.dotfiles`.
+- **After merge** — when `TOPICS.md` changed: run `memory topics --sync`. Nothing to
+  commit — `~/.dotfiles` keeps a placeholder topics line (see `.gitattributes`).
 
 **Done when:** the PR is open and you have printed its URL.

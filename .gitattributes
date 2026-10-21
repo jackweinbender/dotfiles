@@ -1,0 +1,4 @@
+# The memory skill's `Topics —` line is synced from the private ~/Code/memory/TOPICS.md
+# (`memory topics --sync`). The clean filter commits a placeholder instead, so the real
+# taxonomy stays local. The filter is configured by agents/bootstrap.zsh.
+agents/skills/memory/SKILL.md filter=memory-topics

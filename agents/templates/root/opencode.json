@@ -6,7 +6,8 @@
       "workspace *": "allow"
     },
     "external_directory": {
-      "~/.dotfiles/agents/**": "allow"
+      "~/.dotfiles/agents/**": "allow",
+      "~/.dotfiles-*/agents/**": "allow"
     }
   }
 }

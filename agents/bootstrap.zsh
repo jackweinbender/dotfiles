@@ -7,6 +7,12 @@
 #   skills/<name>/   → SYMLINKED live into ~/Code/.claude/skills/<name>/. Edit a SKILL.md
 #                      and it's live immediately (still git-tracked here = change-controlled).
 #                      skills/bin is on PATH (via zsh/lib/path.zsh), not linked here.
+#   overlays         → any ~/.dotfiles-*/agents/skills/ (e.g. a private
+#                      ~/.dotfiles-<name> repo) is linked the same way, after this topic's skills. A name
+#                      already taken is skipped with a warning. Their bin/ is on PATH too.
+#
+#   memory topics    → configures the .gitattributes filter that keeps the memory skill's
+#                      synced topic list out of git, then syncs it.
 #
 # Idempotent. NOT touched: ~/Code/memory, ~/Code/github.com, live ~/Code/workspaces/*.
 # The workspace template (templates/workspace) is read straight from source by `workspace create`.
@@ -46,14 +52,29 @@ _copy "$_ROOT/workspaces/AGENTS.md"  "$_CODE/workspaces/AGENTS.md"  && success "
 _copy "$_ROOT/workspaces/CLAUDE.md"  "$_CODE/workspaces/CLAUDE.md"  && success "compiled ~/Code/workspaces/CLAUDE.md"
 
 # 2. skills — SYMLINKED live: skills/<name>/ → ~/Code/.claude/skills/<name>/ (bin excluded; on PATH)
+#    This topic first, then each overlay's agents/skills/ (~/.dotfiles-*, e.g. a private repo).
 rm -rf "$_CODE/.claude/skills"
 mkdir -p "$_CODE/.claude/skills"
-for d in "$_SKILLS"/*(/N); do
-  name=${d:t}
-  [[ "$name" == bin ]] && continue
-  ln -s "$d" "$_CODE/.claude/skills/$name"
-  success "linked ~/Code/.claude/skills/$name -> ${d/#$HOME/~}"
+for root in "$_SKILLS" "$HOME"/.dotfiles-*/agents/skills(/N); do
+  for d in "$root"/*(/N); do
+    name=${d:t}
+    [[ "$name" == bin ]] && continue
+    if [[ -e "$_CODE/.claude/skills/$name" ]]; then
+      warn "skipped ${d/#$HOME/~}: ~/Code/.claude/skills/$name already linked"
+      continue
+    fi
+    ln -s "$d" "$_CODE/.claude/skills/$name"
+    success "linked ~/Code/.claude/skills/$name -> ${d/#$HOME/~}"
+  done
 done
+
+# 3. memory topics — the skill's `Topics —` line is synced from private ~/Code/memory/TOPICS.md;
+#    the clean filter (see .gitattributes) commits a placeholder so the real list stays local.
+if git -C "$DOTFILES" config filter.memory-topics.clean "sed -E 's/^([[:space:]]*Topics — ).*/\\1none yet (read INDEX.md)./'" &&
+   git -C "$DOTFILES" config filter.memory-topics.smudge cat; then
+  success "configured memory-topics git filter"
+fi
+"$_SKILLS/bin/memory" topics --sync >/dev/null 2>&1 && success "synced memory topics into the memory skill"
 
 success "Done. Config compiled; skills linked live; CLIs on PATH (skills/bin via zsh/lib/path.zsh)."
 info "Untouched: ~/Code/memory, github.com, live workspaces."

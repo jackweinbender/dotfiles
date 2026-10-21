@@ -58,11 +58,11 @@ Spend disproportionate effort here. Be aggressive, be creative, and keep going.
    through the `query` skill so it needs no permission prompt. Pin the time window so the
    same invocation gives the same verdict.
 3. **Curl or HTTP script** against the running service. Read the raw response — headers
-   included — rather than a summarising flag; see [[edge-vs-origin-redirect-discriminator]]
-   for how a summarising flag hides the discriminator you need.
+   included — rather than a summarising flag, which can hide the discriminator you need
+   (e.g. which layer of a CDN-fronted stack actually answered).
 4. **Request a specific replica.** When the symptom lives on some pods and not others,
-   route to them deterministically rather than waiting for luck — e.g. the canary header
-   in [[canary-dest-header]].
+   route to them deterministically rather than waiting for luck — e.g. a header that pins
+   the request to the canary.
 5. **CLI invocation** with a fixture input, diffing stdout against a known-good snapshot.
 6. **Replay a captured trace.** Save a real request, payload, or event to disk and replay
    it through the code path in isolation.
@@ -102,9 +102,8 @@ debuggable; a 1% one is not — keep raising the rate until it is.
 
 Say so, and make the loop out of what production already emits: an existing metric, a log
 filter, a trace query. When the signal genuinely is not emitted, the honest finding is an
-**instrumentation gap** — treat that as the first bug, and reach for the
-metrics or observability skills to close
-it rather than guessing across the gap.
+**instrumentation gap** — treat that as the first bug, and reach for whatever metrics or
+observability skills are available to close it rather than guessing across the gap.
 
 ### When you genuinely cannot build a loop
 
@@ -187,8 +186,8 @@ Tag every debug log with a unique prefix — `[DEBUG-a4f2]` — so cleanup is on
 logs die; untagged ones survive into main.
 
 Confirm the log you added actually reaches the sink before concluding anything from its
-absence; in `example/app` that means `AppLogger`, not the Monolog facade
-([[AppLogger-vs-monolog-log]]).
+absence; a codebase may route real logs through its own logger while the framework's
+default facade goes nowhere you can see.
 
 **Performance branch.** For a regression in latency or throughput, logs are usually the
 wrong instrument. Establish a baseline measurement first — timing harness, profiler, query
@@ -201,10 +200,9 @@ fix second.
 
 A report names a **symptom**, and the symptom arrives through one path. Before
 editing, enumerate every caller of the function you are about to change —
-`rg`, an LSP reference search, or for PHP the authoritative
-`psalm --find-references-to` sweep in
-[[cookie-usage-map-method]] (which catches dynamic-name construction that
-grep misses).
+`rg`, an LSP reference search, or the language's authoritative reference finder
+(for PHP, `psalm --find-references-to`, which catches dynamic-name construction
+that grep misses).
 
 Then state where the fix belongs:
 

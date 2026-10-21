@@ -22,4 +22,6 @@ agents/
 
 **Setup:** chained from `osx/bootstrap.zsh`, or run `zsh ~/.dotfiles/agents/bootstrap.zsh`. Idempotent. After editing anything here, run `agents_init` (defined in `zsh/lib/_.zsh`) to recompile `~/Code` config and relink skills.
 
+**Overlays (private skills).** Any `~/.dotfiles-*/` repo with the same `agents/skills/` layout is merged in: `bootstrap.zsh` links its `skills/<name>/` into `~/Code/.claude/skills/` after this topic's own (name clashes are skipped with a warning), and `zsh/lib/path.zsh` appends its `skills/bin/` (and a top-level `bin/`) to `PATH`. Use it for skills and scripts that shouldn't live in this public repo, e.g. work tooling. Clone it to `~/.dotfiles-<name>` and run `agents_init`.
+
 **Not managed here (private / separate):** the `~/Code/memory/` store (its own repo) and the `~/Code/github.com/` clones.

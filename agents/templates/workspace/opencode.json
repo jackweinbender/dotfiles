@@ -9,7 +9,8 @@
     "edit": "allow",
     "external_directory": {
       "~/Code/**": "allow",
-      "~/.dotfiles/agents/skills/**": "allow"
+      "~/.dotfiles/agents/skills/**": "allow",
+      "~/.dotfiles-*/agents/skills/**": "allow"
     }
   }
 }

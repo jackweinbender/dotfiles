@@ -20,7 +20,7 @@ Recall is judgment: you pick the topics and the notes; the CLI only filters.
 1. **Pick topics** from the description's `Topics —` list that could bear on the task. Pick generously — a spare topic costs a few lines.
 2. **`memory list --topic a,b`** — prints the matching notes' `INDEX.md` lines (title, hook, facets). It also adds notes for the repo you're in (detected from the checkout, or every repo under `.worktrees/` at a workspace root) and `unfiled` notes. `--repo org/repo` overrides detection; `--no-repo` skips it.
 3. **Read** the note(s) whose line matches the task.
-4. **Fall back** when nothing fits, or the list says `none yet`: `rg <term> ~/Code/memory/knowledge/`, then read all of `INDEX.md`. Its lines end in `· topic/… repo/…`, so `rg 'repo/example/app' INDEX.md` filters without the CLI.
+4. **Fall back** when nothing fits, or the list says `none yet`: `rg <term> ~/Code/memory/knowledge/`, then read all of `INDEX.md`. Its lines end in `· topic/… repo/…`, so `rg 'repo/acme/widgets' INDEX.md` filters without the CLI.
 
 Do this at the **start** of work, or whenever a question smells already-answered:
 - "have we hit this before?" before debugging or re-deriving
@@ -34,7 +34,7 @@ When you learn something durable and reusable beyond the current task, record it
 memory add \
   --slug ci-uses-shallow-clones \
   --type reference \
-  --tags "topic/ci, topic/git, repo/example/app, shallow-clone" \
+  --tags "topic/ci, topic/git, repo/acme/widgets, shallow-clone" \
   --title "CI uses shallow clones" \
   --summary "the build runner fetches depth=1; deepen before any tag-describe step or it fails."
 ```

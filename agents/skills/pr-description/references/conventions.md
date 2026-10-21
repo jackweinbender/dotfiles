@@ -1,6 +1,6 @@
 # PR title and description conventions
 
-The standard the `pr-description` skill applies. Other skills may cite this file by path when they write a PR body. Examples are quoted from `example/app#140305`, `#140225`, and `#140155`.
+The standard the `pr-description` skill applies. Other skills may cite this file by path when they write a PR body. Examples are adapted from real PRs.
 
 ## The title
 
@@ -14,13 +14,13 @@ The standard the `pr-description` skill applies. Other skills may cite this file
 
 ## The sections
 
-These are **functions, not headings** — map them onto whatever sections the repo's template asks for. Include a function only when you have something real to put in it; drop the rest (the `example/app` template says this explicitly: remove an irrelevant section, don't leave it blank, and never write "N/A").
+These are **functions, not headings** — map them onto whatever sections the repo's template asks for. Include a function only when you have something real to put in it; drop the rest (good templates say this explicitly: remove an irrelevant section, don't leave it blank, and never write "N/A").
 
 1. **The problem, in plain terms.** Before any diff detail. State what is wrong or missing so a reader who has never opened the file understands the stakes — who is affected, and how. Name the concrete failure, not the abstraction: *"an API request authenticated as user B, sent from a browser logged in as user A, showed up in traces, logs, and experiments as user A."*
 2. **What changed.** Per area, with the **mechanism**. The diff is already the file list; this is why each edit does what it does. One bolded lead-in per area.
 3. **Why this and not the obvious alternative.** The approach you rejected and the reason. Include it when review changed your mind, and say so — *"Review caught that `isApi()` also returns true for any URL starting with `/api` on any host."* This is the section that most often saves the next reader from reverting you.
 4. **What deliberately does NOT change.** The scope fence, and the difference between "forgot" and "decided". Name the seam you left alone and where it's handled instead (a sibling PR number, a follow-up).
-5. **Known limitations / accepted side effects.** Every cost you are aware of, named. *"internal-api.example.com traces lose `usr.*` entirely"* — stated, with why it's acceptable. Omitting a cost you know about is the one failure mode that destroys the description's credibility wholesale.
+5. **Known limitations / accepted side effects.** Every cost you are aware of, named. *"internal-API traces lose `usr.*` entirely"* — stated, with why it's acceptable. Omitting a cost you know about is the one failure mode that destroys the description's credibility wholesale.
 6. **Verification.** Evidence, under the rules below.
 7. **What the reviewer is better placed to check than the code is.** The human-only asks: whether a dashboard or monitor keys on a label you changed, whether an experiment has real exposure, what production state should look like after deploy.
 8. **Future maintenance.** Retirement conditions for anything transitional — the `TODO(<date>)` you left, what deletes it, and when. Also the posture for the next person who wants to extend it: *"Any PR wanting to grow the allowlist is a signal: either the factory is missing a capability, or the code genuinely needs a review-worthy exception."*

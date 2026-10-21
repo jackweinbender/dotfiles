@@ -10,6 +10,13 @@ export PATH="$DOTFILES/bin:$PATH"
 # Add the agents topic's skill CLIs (memory, workspace) to PATH if present
 [[ -d "$DOTFILES/agents/skills/bin" ]] && export PATH="$DOTFILES/agents/skills/bin:$PATH"
 
+# Add bin/ and skill CLIs from dotfiles overlays (~/.dotfiles-*, e.g. a private repo).
+# Appended, so the personal ones above win on a name clash.
+for _bin in "$HOME"/.dotfiles-*/{bin,agents/skills/bin}(/N); do
+  export PATH="$PATH:$_bin"
+done
+unset _bin
+
 # Add Rust/Cargo bin directory to PATH if installed (keg-only homebrew install)
 [[ -d "/opt/homebrew/opt/rustup/bin" ]] && export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 
