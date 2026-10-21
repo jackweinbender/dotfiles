@@ -75,6 +75,7 @@ if git -C "$DOTFILES" config filter.memory-topics.clean "sed -E 's/^([[:space:]]
   success "configured memory-topics git filter"
 fi
 "$_SKILLS/bin/memory" topics --sync >/dev/null 2>&1 && success "synced memory topics into the memory skill"
+git -C "$DOTFILES" add -- agents/skills/memory/SKILL.md  # refresh the stat; the filter stages the placeholder
 
 success "Done. Config compiled; skills linked live; CLIs on PATH (skills/bin via zsh/lib/path.zsh)."
 info "Untouched: ~/Code/memory, github.com, live workspaces."

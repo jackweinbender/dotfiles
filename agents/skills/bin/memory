@@ -176,6 +176,16 @@ module Memory
       text = File.read(SKILL_PATH)
       raise UsageError, "no 'Topics — …' line in #{SKILL_PATH}" unless text.match?(LINE)
       File.write(SKILL_PATH, text.sub(LINE) { "#{$~[:indent]}Topics — #{render(names)}" })
+      refresh_git_stat!
+    end
+
+    # The line's length changed, so git sees the file as modified until it's re-added. With the
+    # memory-topics clean filter configured, re-adding stages the same placeholder blob. Without
+    # it, `git add` would stage the real topic list, so skip.
+    def refresh_git_stat!
+      dir = File.dirname(SKILL_PATH)
+      _, status = Open3.capture2e("git", "-C", dir, "config", "--get", "filter.memory-topics.clean")
+      Open3.capture2e("git", "-C", dir, "add", "--", SKILL_PATH) if status.success?
     end
   end
 
